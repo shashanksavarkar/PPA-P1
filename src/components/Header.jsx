@@ -21,7 +21,7 @@ const Header = ({
             DEVELOPER PLAYGROUND
           </h1>
           <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "1px" }}>
-            Multi-Language Compiler Sandbox
+            HTML, CSS & JS Code Sandbox
           </p>
         </div>
       </div>

@@ -10,22 +10,41 @@ import {
   BookOpen,
   ListTodo,
   CheckCircle,
-  XCircle 
+  XCircle,
+  Play
 } from "lucide-react";
 
-// Local imports
-import {
-  DEFAULT_HTML,
-  DEFAULT_CSS,
-  DEFAULT_WEB_JS
-} from "./constants/templates";
+// Local templates defined directly
+const DEFAULT_HTML = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>PPA</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <script src="index.js"></script>
+  </body>
+</html>`;
 
-import { QUESTIONS } from "./constants/questions";
+const DEFAULT_CSS = `body {
+  font-family: sans-serif;
+  margin: 20px;
+  background-color: #0f172a;
+  color: #f8fafc;
+}`;
+
+const DEFAULT_WEB_JS = `console.log("Hello from Javascript!");`;
+
+import QUESTIONS from "./constants/challenges.json";
 import { compileWebSandbox } from "./utils/compiler";
 
 import Header from "./components/Header";
 import SettingsDrawer from "./components/SettingsDrawer";
 import OutputPanel from "./components/OutputPanel";
+import { evaluateRules } from "./utils/ruleEvaluator";
 
 const App = () => {
   // Ref to hold the latest compilation run handler
@@ -92,9 +111,28 @@ const App = () => {
     if (activeQuestion && activeQuestion.id === q.id) {
       setActiveQuestion(null);
       setValidationResult(null);
+      setHtmlCode(DEFAULT_HTML);
+      setCssCode(DEFAULT_CSS);
+      setWebJsCode(DEFAULT_WEB_JS);
+      try {
+        localStorage.setItem("ppa_playground_html", DEFAULT_HTML);
+        localStorage.setItem("ppa_playground_css", DEFAULT_CSS);
+        localStorage.setItem("ppa_playground_webjs", DEFAULT_WEB_JS);
+      } catch(e){}
     } else {
       setActiveQuestion(q);
       setValidationResult(null);
+      const targetHtml = q.initialHtml || DEFAULT_HTML;
+      const targetCss = q.initialCss || DEFAULT_CSS;
+      const targetJs = q.initialJs || DEFAULT_WEB_JS;
+      setHtmlCode(targetHtml);
+      setCssCode(targetCss);
+      setWebJsCode(targetJs);
+      try {
+        localStorage.setItem("ppa_playground_html", targetHtml);
+        localStorage.setItem("ppa_playground_css", targetCss);
+        localStorage.setItem("ppa_playground_webjs", targetJs);
+      } catch(e){}
     }
   };
 
@@ -117,16 +155,22 @@ const App = () => {
     return () => window.removeEventListener("keydown", handleGlobalSave);
   }, []);
 
-  // Run validation whenever code changes, or when consoleLogs change
+  // Run validation whenever code changes, console logs update, or the preview source is compiled (debounced to avoid typing lag)
   useEffect(() => {
     if (!activeQuestion) {
       setValidationResult(null);
       return;
     }
 
-    const result = activeQuestion.validate(htmlCode, cssCode, webJsCode, consoleLogs);
-    setValidationResult(result);
-  }, [htmlCode, cssCode, webJsCode, consoleLogs, activeQuestion]);
+    const timer = setTimeout(() => {
+      const iframe = document.querySelector(".preview-iframe");
+      const iframeDoc = iframe?.contentDocument || iframe?.contentWindow?.document;
+      const result = evaluateRules(htmlCode, cssCode, webJsCode, consoleLogs, activeQuestion, iframeDoc);
+      setValidationResult(result);
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [htmlCode, cssCode, webJsCode, consoleLogs, activeQuestion, srcDoc]);
 
   // Mouse handlers for panel resizer
   const handleSidebarMouseDown = (e) => {
@@ -189,14 +233,22 @@ const App = () => {
 
   // Reset current environment to default boilerplate
   const handleResetCode = () => {
-    if (window.confirm("Are you sure you want to reset the current editor to the default HTML/CSS boilerplate?")) {
-      setHtmlCode(DEFAULT_HTML);
-      setCssCode(DEFAULT_CSS);
-      setWebJsCode(DEFAULT_WEB_JS);
+    const confirmMsg = activeQuestion 
+      ? `Are you sure you want to reset the editor to the boilerplate for "${activeQuestion.title}"?`
+      : "Are you sure you want to reset the editor to the default HTML/CSS boilerplate?";
+
+    if (window.confirm(confirmMsg)) {
+      const targetHtml = activeQuestion?.initialHtml || DEFAULT_HTML;
+      const targetCss = activeQuestion?.initialCss || DEFAULT_CSS;
+      const targetJs = activeQuestion?.initialJs || DEFAULT_WEB_JS;
+
+      setHtmlCode(targetHtml);
+      setCssCode(targetCss);
+      setWebJsCode(targetJs);
       try {
-        localStorage.setItem("ppa_playground_html", DEFAULT_HTML);
-        localStorage.setItem("ppa_playground_css", DEFAULT_CSS);
-        localStorage.setItem("ppa_playground_webjs", DEFAULT_WEB_JS);
+        localStorage.setItem("ppa_playground_html", targetHtml);
+        localStorage.setItem("ppa_playground_css", targetCss);
+        localStorage.setItem("ppa_playground_webjs", targetJs);
       } catch(err){}
     }
   };
@@ -235,15 +287,16 @@ const App = () => {
   // Sync values edited in Monaco
   const handleEditorChange = (value) => {
     const code = value || "";
+    const suffix = activeQuestion ? `_${activeQuestion.id}` : "";
     if (webSubTab === "html") {
       setHtmlCode(code);
-      try { localStorage.setItem("ppa_playground_html", code); } catch(e){}
+      try { localStorage.setItem(`ppa_playground_html${suffix}`, code); } catch(e){}
     } else if (webSubTab === "css") {
       setCssCode(code);
-      try { localStorage.setItem("ppa_playground_css", code); } catch(e){}
+      try { localStorage.setItem(`ppa_playground_css${suffix}`, code); } catch(e){}
     } else {
       setWebJsCode(code);
-      try { localStorage.setItem("ppa_playground_webjs", code); } catch(e){}
+      try { localStorage.setItem(`ppa_playground_webjs${suffix}`, code); } catch(e){}
     }
   };
 
@@ -360,15 +413,77 @@ const App = () => {
                     <ListTodo size={14} style={{ color: "var(--accent-color)" }} />
                     <span>Changes to be Done</span>
                   </h3>
-                  <ul style={{ display: "flex", flexDirection: "column", gap: "8px", listStyle: "none" }}>
-                    {activeQuestion.changesToBeDone.map((change, idx) => (
-                      <li key={idx} style={{ display: "flex", gap: "8px", fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                        <span style={{ color: "var(--accent-color)", fontWeight: "bold" }}>•</span>
-                        <span>{change}</span>
-                      </li>
-                    ))}
+                  <ul style={{ display: "flex", flexDirection: "column", gap: "10px", listStyle: "none" }}>
+                    {activeQuestion.changesToBeDone.map((change, idx) => {
+                      const stepResult = validationResult?.stepResults?.[idx];
+                      let stepIcon = <span style={{ color: "var(--text-secondary)", fontSize: "0.75rem" }}>○</span>;
+                      let textColor = "var(--text-secondary)";
+
+                      const hasRule = activeQuestion.rules?.some((r, rIdx) => {
+                        const sIdx = r.stepIndex !== undefined ? r.stepIndex : Math.min(rIdx, activeQuestion.changesToBeDone.length - 1);
+                        return sIdx === idx;
+                      });
+
+                      if (hasRule) {
+                        if (stepResult) {
+                          if (stepResult.success) {
+                            stepIcon = <Check size={14} style={{ color: "var(--neon-green)" }} />;
+                            textColor = "var(--text-primary)";
+                          } else {
+                            stepIcon = <XCircle size={14} style={{ color: "var(--neon-red)" }} />;
+                            textColor = "var(--neon-red)";
+                          }
+                        }
+                      } else {
+                        if (validationResult && validationResult.success) {
+                          stepIcon = <Check size={14} style={{ color: "var(--neon-green)" }} />;
+                          textColor = "var(--text-primary)";
+                        } else {
+                          stepIcon = <span style={{ color: "var(--text-secondary)", fontSize: "0.6rem", display: "inline-block", transform: "translateY(-1px)" }}>●</span>;
+                          textColor = "var(--text-secondary)";
+                        }
+                      }
+
+                      return (
+                        <li key={idx} style={{ display: "flex", gap: "8px", alignItems: "flex-start", fontSize: "0.75rem", color: textColor, lineHeight: "1.4" }}>
+                          <span style={{ display: "flex", alignItems: "center", height: "18px" }}>{stepIcon}</span>
+                          <div>
+                            <span>{change}</span>
+                            {stepResult && !stepResult.success && stepResult.messages.length > 0 && (
+                              <div style={{ fontSize: "0.7rem", color: "var(--neon-red)", marginTop: "2px", fontWeight: 400, opacity: 0.85 }}>
+                                {stepResult.messages[0]}
+                              </div>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
+
+                {/* Run Tests Button */}
+                <button
+                  onClick={handleRunCode}
+                  className="btn-minimal"
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    marginTop: "auto",
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    backgroundColor: "rgba(59, 130, 246, 0.12)",
+                    borderColor: "rgba(59, 130, 246, 0.25)",
+                    color: "var(--accent-color)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    cursor: "pointer"
+                  }}
+                >
+                  <Play size={12} fill="var(--accent-color)" />
+                  <span>Run Tests (Ctrl+S)</span>
+                </button>
 
                 {/* Validation status feedback */}
                 {validationResult && (
@@ -383,7 +498,7 @@ const App = () => {
                       fontSize: "0.75rem",
                       fontWeight: 500,
                       lineHeight: "1.3",
-                      marginTop: "auto",
+                      marginTop: "8px",
                       backgroundColor: validationResult.success ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
                       color: validationResult.success ? "var(--neon-green)" : "var(--neon-red)",
                       border: "1px solid",

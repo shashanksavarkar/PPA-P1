@@ -1,0 +1,139 @@
+[
+  {
+    "id": "html-list-structure",
+    "env": "web",
+    "title": "Fix Shopping List Structure",
+    "difficulty": "Easy",
+    "description": "Correct the HTML structure by replacing generic tags with proper semantic list tags.",
+    "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Shopping List</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <div class=\"shopping-list\">\n      <div>Milk</div>\n      <div>Bread</div>\n      <div>Eggs</div>\n    </div>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+    "initialCss": "body {\n  font-family: sans-serif;\n  margin: 20px;\n  background-color: #0f172a;\n  color: #f8fafc;\n}\n.shopping-list {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}",
+    "initialJs": "console.log(\"Shopping List loaded\");",
+    "changesToBeDone": [
+      "Replace the container <div> with a <ul> element.",
+      "Replace each <span> item with an <li> element.",
+      "Keep the text values exactly as 'Milk', 'Bread', and 'Eggs'."
+    ],
+    "rules": [
+      {
+        "type": "TAG_NOT_EXISTS",
+        "selector": ".shopping-list > div",
+        "errorMessage": "The shopping list container should not use a <div> tag."
+      },
+      {
+        "type": "TAG_EXISTS",
+        "selector": "ul.shopping-list",
+        "errorMessage": "Expected a <ul> element with class 'shopping-list'."
+      },
+      {
+        "type": "TAG_COUNT",
+        "selector": "ul.shopping-list > li",
+        "value": 3,
+        "errorMessage": "Expected exactly 3 list items inside the shopping list."
+      },
+      {
+        "type": "TEXT_EQUALS",
+        "selector": "ul.shopping-list > li:nth-of-type(1)",
+        "value": "Milk",
+        "errorMessage": "The first list item must be 'Milk'."
+      },
+      {
+        "type": "TEXT_EQUALS",
+        "selector": "ul.shopping-list > li:nth-of-type(2)",
+        "value": "Bread",
+        "errorMessage": "The second list item must be 'Bread'."
+      },
+      {
+        "type": "TEXT_EQUALS",
+        "selector": "ul.shopping-list > li:nth-of-type(3)",
+        "value": "Eggs",
+        "errorMessage": "The third list item must be 'Eggs'."
+      }
+    ]
+  },
+  {
+    "id": "js-array-update",
+    "env": "web",
+    "title": "Update Array Correctly",
+    "difficulty": "Easy",
+    "description": "Modify the JavaScript code so that a new value is successfully added to the array and displayed in the console.",
+    "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Array Update</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <h1>Check the Console Logs below</h1>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+    "initialCss": "body {\n  font-family: sans-serif;\n  margin: 20px;\n  background-color: #0f172a;\n  color: #f8fafc;\n}",
+    "initialJs": "// Create an array called 'fruits' with 'Apple' and 'Banana'\nconst fruits = [\"Apple\", \"Banana\"];\n\n// Add 'Orange' to the fruits array\n\n\n// Log the length of fruits array\nconsole.log(fruits.length);",
+    "changesToBeDone": [
+      "Create an array called 'fruits' containing 'Apple' and 'Banana'.",
+      "Add 'Orange' to the array using the correct array method.",
+      "Log the updated array length to the console.",
+      "Ensure the Console Logs output shows '3'."
+    ],
+    "rules": [
+      {
+        "type": "CONSOLE_NO_ERRORS",
+        "errorMessage": "Your code produced runtime errors. Fix all console errors."
+      },
+      {
+        "type": "JS_CODE_INCLUDES",
+        "value": "fruits.push",
+        "errorMessage": "Use the '.push()' method to add a new item to the array."
+      },
+      {
+        "type": "CONSOLE_LOG_CONTAINS",
+        "value": "3",
+        "errorMessage": "The Console Logs output must contain the updated array length '3'."
+      }
+    ]
+  },
+  {
+    "id": "todo-list-app",
+    "env": "web",
+    "title": "Simple Todo List",
+    "difficulty": "Medium",
+    "description": "Create a simple todo list app where users can add tasks dynamically using JavaScript.",
+    "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Simple Todo App</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <div class=\"todo-container\">\n      <h2>My Todo List</h2>\n      <!-- Add input field and button here -->\n      \n      <!-- Add unordered list here -->\n    </div>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+    "initialCss": "body {\n  font-family: sans-serif;\n  margin: 20px;\n  background-color: #0f172a;\n  color: #f8fafc;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 80vh;\n}\n.todo-container {\n  background: #1e293b;\n  padding: 20px;\n  border-radius: 8px;\n  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);\n  width: 300px;\n}",
+    "initialJs": "// Todo list logic",
+    "changesToBeDone": [
+      "Add an input field with id 'todo-input'.",
+      "Add a button with id 'add-task-btn' and text 'Add Task'.",
+      "Add an unordered list with id 'todo-list'.",
+      "In app.js, add functionality to append a new <li> item when the button is clicked.",
+      "Center the app layout using CSS."
+    ],
+    "rules": [
+      {
+        "type": "TAG_EXISTS",
+        "selector": "#todo-input",
+        "errorMessage": "Missing input field with id 'todo-input'."
+      },
+      {
+        "type": "TAG_EXISTS",
+        "selector": "#add-task-btn",
+        "errorMessage": "Missing button with id 'add-task-btn'."
+      },
+      {
+        "type": "TAG_EXISTS",
+        "selector": "#todo-list",
+        "errorMessage": "Missing unordered list with id 'todo-list'."
+      },
+      {
+        "type": "TEXT_EQUALS",
+        "selector": "#add-task-btn",
+        "value": "Add Task",
+        "errorMessage": "The button text must be exactly 'Add Task'."
+      },
+      {
+        "type": "INPUT_AND_ASSERT",
+        "selector": "#todo-input",
+        "value": "Learn JavaScript",
+        "targetSelector": "#todo-input",
+        "errorMessage": "The input field should accept the task text correctly."
+      },
+      {
+        "type": "CLICK_AND_ASSERT",
+        "selector": "#add-task-btn",
+        "targetSelector": "#todo-list > li:nth-of-type(1)",
+        "value": "Learn JavaScript",
+        "errorMessage": "Clicking the add button should append the task to the todo list."
+      }
+    ]
+  }
+]

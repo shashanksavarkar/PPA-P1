@@ -34,7 +34,7 @@ const OutputPanel = ({
             srcDoc={srcDoc}
             title="Web Sandbox Preview Output"
             className="preview-iframe"
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
           />
         </div>
 
