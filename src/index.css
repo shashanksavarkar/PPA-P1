@@ -346,3 +346,107 @@ body {
   display: flex;
   gap: 8px;
 }
+
+.challenges-sidebar {
+  flex-shrink: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+  .challenges-sidebar {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 16px;
+    height: auto;
+  }
+}
+
+.challenge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.challenge-item {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.challenge-item:hover {
+  border-color: var(--border-hover);
+  background-color: var(--bg-quaternary);
+}
+
+.challenge-item.active {
+  border-color: var(--accent-color);
+  background-color: rgba(59, 130, 246, 0.08);
+}
+
+.challenge-difficulty {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.challenge-difficulty.easy {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--neon-green);
+}
+
+.challenge-difficulty.medium {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.challenge-difficulty.hard {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: var(--neon-red);
+}
+
+.challenge-active-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+  white-space: pre-wrap;
+}
+
+.challenge-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  margin-top: 12px;
+  font-weight: 500;
+}
+
+.challenge-status-bar.success {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: var(--neon-green);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.challenge-status-bar.error {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: var(--neon-red);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+

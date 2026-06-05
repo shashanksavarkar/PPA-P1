@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
-import { Check, Copy, RefreshCw, Sparkles } from "lucide-react";
+import { Check, Copy, RefreshCw, Sparkles, Trophy, Award } from "lucide-react";
 
 // Local imports
 import {
@@ -13,6 +13,7 @@ import {
   DEFAULT_CPP
 } from "./constants/templates";
 
+import { QUESTIONS } from "./constants/questions";
 
 import {
   compileWebSandbox,
@@ -26,6 +27,10 @@ import OutputPanel from "./components/OutputPanel";
 const App = () => {
   // Environment selector: "web", "js", "python", "c", "cpp"
   const [env, setEnv] = useState("web");
+
+  // Coding challenges states (Challenge Mode Only)
+  const [activeQuestion, setActiveQuestion] = useState(() => QUESTIONS[0]);
+  const [validationResult, setValidationResult] = useState(null);
   
   // Ref to hold the latest compilation run handler
   const handleRunCodeRef = useRef(null);
@@ -33,9 +38,10 @@ const App = () => {
   // Ref to hold the Monaco Editor instance for programmatic formatting
   const editorRef = useRef(null);
   
-  // Resizable panels state hooks
-  const [leftWidth, setLeftWidth] = useState(50); // panel splits percentage
-  const [isDragging, setIsDragging] = useState(false);
+  // Resizable panels state hooks (three columns)
+  const [sidebarWidth, setSidebarWidth] = useState(22);
+  const [editorWidth, setEditorWidth] = useState(38);
+  const [draggingDivider, setDraggingDivider] = useState("none"); // "none" | "sidebar" | "editor"
   const containerRef = useRef(null);
   const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth > 1024 : true);
 
@@ -47,27 +53,34 @@ const App = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
   
-  // Independent code values for each environment (from localStorage if available)
+  // Independent code values for each environment (from localStorage or matching challenge initialCode)
   const [htmlCode, setHtmlCode] = useState(() => {
-    try { return localStorage.getItem("ppa_playground_html") || DEFAULT_HTML; } catch(e) { return DEFAULT_HTML; }
+    const defaultVal = QUESTIONS.find(q => q.env === "web")?.initialCode.html || DEFAULT_HTML;
+    try { return localStorage.getItem("ppa_playground_html") || defaultVal; } catch(e) { return defaultVal; }
   });
   const [cssCode, setCssCode] = useState(() => {
-    try { return localStorage.getItem("ppa_playground_css") || DEFAULT_CSS; } catch(e) { return DEFAULT_CSS; }
+    const defaultVal = QUESTIONS.find(q => q.env === "web")?.initialCode.css || DEFAULT_CSS;
+    try { return localStorage.getItem("ppa_playground_css") || defaultVal; } catch(e) { return defaultVal; }
   });
   const [webJsCode, setWebJsCode] = useState(() => {
-    try { return localStorage.getItem("ppa_playground_webjs") || DEFAULT_WEB_JS; } catch(e) { return DEFAULT_WEB_JS; }
+    const defaultVal = QUESTIONS.find(q => q.env === "web")?.initialCode.js || DEFAULT_WEB_JS;
+    try { return localStorage.getItem("ppa_playground_webjs") || defaultVal; } catch(e) { return defaultVal; }
   });
   const [jsCode, setJsCode] = useState(() => {
-    try { return localStorage.getItem("ppa_playground_js") || DEFAULT_JS; } catch(e) { return DEFAULT_JS; }
+    const defaultVal = QUESTIONS.find(q => q.env === "js")?.initialCode.code || DEFAULT_JS;
+    try { return localStorage.getItem("ppa_playground_js") || defaultVal; } catch(e) { return defaultVal; }
   });
   const [pythonCode, setPythonCode] = useState(() => {
-    try { return localStorage.getItem("ppa_playground_python") || DEFAULT_PYTHON; } catch(e) { return DEFAULT_PYTHON; }
+    const defaultVal = QUESTIONS.find(q => q.env === "python")?.initialCode.code || DEFAULT_PYTHON;
+    try { return localStorage.getItem("ppa_playground_python") || defaultVal; } catch(e) { return defaultVal; }
   });
   const [cCode, setCCode] = useState(() => {
-    try { return localStorage.getItem("ppa_playground_c") || DEFAULT_C; } catch(e) { return DEFAULT_C; }
+    const defaultVal = QUESTIONS.find(q => q.env === "c")?.initialCode.code || DEFAULT_C;
+    try { return localStorage.getItem("ppa_playground_c") || defaultVal; } catch(e) { return defaultVal; }
   });
   const [cppCode, setCppCode] = useState(() => {
-    try { return localStorage.getItem("ppa_playground_cpp") || DEFAULT_CPP; } catch(e) { return DEFAULT_CPP; }
+    const defaultVal = QUESTIONS.find(q => q.env === "cpp")?.initialCode.code || DEFAULT_CPP;
+    try { return localStorage.getItem("ppa_playground_cpp") || defaultVal; } catch(e) { return defaultVal; }
   });
   
   // Active sub-tab under "web" project
@@ -80,7 +93,6 @@ const App = () => {
   const [isCompiling, setIsCompiling] = useState(false);
   
   // General setting preferences
-  const [autoRun, setAutoRun] = useState(true);
   const [wordWrap, setWordWrap] = useState("on");
   const [fontSize, setFontSize] = useState(14);
   const [minimap, setMinimap] = useState(false);
@@ -133,39 +145,55 @@ const App = () => {
     return () => window.removeEventListener("keydown", handleGlobalSave);
   }, []);
 
-  // Mouse handlers for panel resizer
-  const handleMouseDown = (e) => {
+  // Mouse handlers for panel resizers (Challenges, Editor, Output)
+  const handleSidebarMouseDown = (e) => {
     e.preventDefault();
-    setIsDragging(true);
+    setDraggingDivider("sidebar");
+  };
+
+  const handleEditorMouseDown = (e) => {
+    e.preventDefault();
+    setDraggingDivider("editor");
   };
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!isDragging || !containerRef.current) return;
+      if (draggingDivider === "none" || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const newWidth = ((e.clientX - rect.left) / rect.width) * 100;
-      if (newWidth >= 15 && newWidth <= 85) {
-        setLeftWidth(newWidth);
+      const clientXPercent = ((e.clientX - rect.left) / rect.width) * 100;
+
+      if (draggingDivider === "sidebar") {
+        // Constrain sidebar width between 15% and 40%
+        if (clientXPercent >= 15 && clientXPercent <= 40) {
+          setSidebarWidth(clientXPercent);
+        }
+      } else if (draggingDivider === "editor") {
+        // Constrain editor width so that editor is at least 20% and output panel is at least 15%
+        const newEditorWidth = clientXPercent - sidebarWidth;
+        if (newEditorWidth >= 20 && (clientXPercent <= 85)) {
+          setEditorWidth(newEditorWidth);
+        }
       }
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
+      setDraggingDivider("none");
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
 
-    if (isDragging) {
+    if (draggingDivider !== "none") {
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     }
+
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging]);
+  }, [draggingDivider, sidebarWidth]);
 
   // Trigger Monaco's programmatic formatting provider
   const handleFormatCode = () => {
@@ -174,30 +202,138 @@ const App = () => {
     }
   };
 
-  // Reset current environment to default boilerplate
-  const handleResetCode = () => {
-    if (window.confirm("Are you sure you want to reset the current editor to the boilerplate?")) {
-      if (env === "web") {
-        setHtmlCode(DEFAULT_HTML);
-        setCssCode(DEFAULT_CSS);
-        setWebJsCode(DEFAULT_WEB_JS);
+  // Load a selected coding challenge
+  const handleSelectQuestion = (question) => {
+    if (activeQuestion && activeQuestion.id === question.id) {
+      setActiveQuestion(null);
+      setValidationResult(null);
+      return;
+    }
+
+    if (window.confirm(`Load challenge "${question.title}"? This will overwrite your current code.`)) {
+      setActiveQuestion(question);
+      setEnv(question.env);
+      if (question.env === "web") {
+        setHtmlCode(question.initialCode.html);
+        setCssCode(question.initialCode.css);
+        setWebJsCode(question.initialCode.js);
+        setWebSubTab("html");
         try {
-          localStorage.setItem("ppa_playground_html", DEFAULT_HTML);
-          localStorage.setItem("ppa_playground_css", DEFAULT_CSS);
-          localStorage.setItem("ppa_playground_webjs", DEFAULT_WEB_JS);
-        } catch(err){}
-      } else if (env === "js") {
-        setJsCode(DEFAULT_JS);
-        try { localStorage.setItem("ppa_playground_js", DEFAULT_JS); } catch(err){}
-      } else if (env === "python") {
-        setPythonCode(DEFAULT_PYTHON);
-        try { localStorage.setItem("ppa_playground_python", DEFAULT_PYTHON); } catch(err){}
-      } else if (env === "c") {
-        setCCode(DEFAULT_C);
-        try { localStorage.setItem("ppa_playground_c", DEFAULT_C); } catch(err){}
-      } else if (env === "cpp") {
-        setCppCode(DEFAULT_CPP);
-        try { localStorage.setItem("ppa_playground_cpp", DEFAULT_CPP); } catch(err){}
+          localStorage.setItem("ppa_playground_html", question.initialCode.html);
+          localStorage.setItem("ppa_playground_css", question.initialCode.css);
+          localStorage.setItem("ppa_playground_webjs", question.initialCode.js);
+        } catch(e){}
+      } else {
+        const code = question.initialCode.code;
+        if (question.env === "js") {
+          setJsCode(code);
+          try { localStorage.setItem("ppa_playground_js", code); } catch(e){}
+        } else if (question.env === "python") {
+          setPythonCode(code);
+          try { localStorage.setItem("ppa_playground_python", code); } catch(e){}
+        } else if (question.env === "c") {
+          setCCode(code);
+          try { localStorage.setItem("ppa_playground_c", code); } catch(e){}
+        } else if (question.env === "cpp") {
+          setCppCode(code);
+          try { localStorage.setItem("ppa_playground_cpp", code); } catch(e){}
+        }
+      }
+    }
+  };
+
+  // Run validation checks when code changes
+  useEffect(() => {
+    if (!activeQuestion) {
+      setValidationResult(null);
+      return;
+    }
+
+    if (env !== activeQuestion.env) {
+      setValidationResult({ success: false, message: `Switch back to ${activeQuestion.env.toUpperCase()} environment to validate.` });
+      return;
+    }
+
+    try {
+      let res = null;
+      if (env === "web") {
+        res = activeQuestion.validate(htmlCode, cssCode, webJsCode);
+      } else {
+        res = activeQuestion.validate(getActiveCode(), terminalLogs);
+      }
+      setValidationResult(res);
+    } catch (err) {
+      setValidationResult({ success: false, message: `Validation Error: ${err.message}` });
+    }
+  }, [htmlCode, cssCode, webJsCode, jsCode, pythonCode, cCode, cppCode, env, terminalLogs, activeQuestion]);
+
+  // Auto-switch active challenge when environment tab is selected in Header
+  useEffect(() => {
+    if (activeQuestion && activeQuestion.env === env) return;
+    
+    const matchingQuestion = QUESTIONS.find(q => q.env === env);
+    if (matchingQuestion) {
+      setActiveQuestion(matchingQuestion);
+    }
+  }, [env]);
+
+  // Reset current environment to default boilerplate (or starting challenge code)
+  const handleResetCode = () => {
+    const isChallenge = activeQuestion && activeQuestion.env === env;
+    const msg = isChallenge
+      ? "Are you sure you want to reset the editor to the starting code for this challenge?"
+      : "Are you sure you want to reset the current editor to the boilerplate?";
+
+    if (window.confirm(msg)) {
+      if (isChallenge) {
+        if (env === "web") {
+          setHtmlCode(activeQuestion.initialCode.html);
+          setCssCode(activeQuestion.initialCode.css);
+          setWebJsCode(activeQuestion.initialCode.js);
+          try {
+            localStorage.setItem("ppa_playground_html", activeQuestion.initialCode.html);
+            localStorage.setItem("ppa_playground_css", activeQuestion.initialCode.css);
+            localStorage.setItem("ppa_playground_webjs", activeQuestion.initialCode.js);
+          } catch(err){}
+        } else {
+          const code = activeQuestion.initialCode.code;
+          if (env === "js") {
+            setJsCode(code);
+            try { localStorage.setItem("ppa_playground_js", code); } catch(err){}
+          } else if (env === "python") {
+            setPythonCode(code);
+            try { localStorage.setItem("ppa_playground_python", code); } catch(err){}
+          } else if (env === "c") {
+            setCCode(code);
+            try { localStorage.setItem("ppa_playground_c", code); } catch(err){}
+          } else if (env === "cpp") {
+            setCppCode(code);
+            try { localStorage.setItem("ppa_playground_cpp", code); } catch(err){}
+          }
+        }
+      } else {
+        if (env === "web") {
+          setHtmlCode(DEFAULT_HTML);
+          setCssCode(DEFAULT_CSS);
+          setWebJsCode(DEFAULT_WEB_JS);
+          try {
+            localStorage.setItem("ppa_playground_html", DEFAULT_HTML);
+            localStorage.setItem("ppa_playground_css", DEFAULT_CSS);
+            localStorage.setItem("ppa_playground_webjs", DEFAULT_WEB_JS);
+          } catch(err){}
+        } else if (env === "js") {
+          setJsCode(DEFAULT_JS);
+          try { localStorage.setItem("ppa_playground_js", DEFAULT_JS); } catch(err){}
+        } else if (env === "python") {
+          setPythonCode(DEFAULT_PYTHON);
+          try { localStorage.setItem("ppa_playground_python", DEFAULT_PYTHON); } catch(err){}
+        } else if (env === "c") {
+          setCCode(DEFAULT_C);
+          try { localStorage.setItem("ppa_playground_c", DEFAULT_C); } catch(err){}
+        } else if (env === "cpp") {
+          setCppCode(DEFAULT_CPP);
+          try { localStorage.setItem("ppa_playground_cpp", DEFAULT_CPP); } catch(err){}
+        }
       }
     }
   };
@@ -212,19 +348,7 @@ const App = () => {
     });
   };
 
-  // Auto compile triggers
-  useEffect(() => {
-    if (!autoRun) return;
-    const timeout = setTimeout(() => {
-      handleRunCode();
-    }, 800);
-    return () => clearTimeout(timeout);
-  }, [htmlCode, cssCode, webJsCode, jsCode, pythonCode, cCode, cppCode, autoRun, env]);
-
-  // Initial load run
-  useEffect(() => {
-    handleRunCode();
-  }, [env]);
+  // The user should always hit Run to get the output, so we do not auto-run code.
 
   // Frame message listener for browser console logs
   useEffect(() => {
@@ -317,8 +441,6 @@ const App = () => {
       <Header 
         env={env}
         setEnv={setEnv}
-        autoRun={autoRun}
-        setAutoRun={setAutoRun}
         showSettings={showSettings}
         setShowSettings={setShowSettings}
         handleRunCode={handleRunCode}
@@ -338,12 +460,72 @@ const App = () => {
 
       {/* Main Panel Layout */}
       <main ref={containerRef} className="playground-layout">
-        
+        {/* Left Side Panel: Coding Challenges list & active description (always visible) */}
+        <div 
+          className="modern-card challenges-sidebar"
+          style={{
+            width: isDesktop ? `${sidebarWidth}%` : "100%",
+            flexShrink: 0,
+            flexGrow: 0
+          }}
+        >
+          <h2 className="font-ui panel-title">CHALLENGES</h2>
+          
+          <div className="challenge-list">
+            {QUESTIONS.map((q) => (
+              <button
+                key={q.id}
+                onClick={() => handleSelectQuestion(q)}
+                className={`challenge-item ${activeQuestion?.id === q.id ? "active" : ""}`}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{q.title}</span>
+                  <span className={`challenge-difficulty ${q.difficulty.toLowerCase()}`}>
+                    {q.difficulty}
+                  </span>
+                </div>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                  Language: {q.env.toUpperCase()}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {activeQuestion && (
+            <div style={{ marginTop: "16px", borderTop: "1px solid var(--border-color)", paddingTop: "14px" }}>
+              <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                <Award size={14} style={{ color: "#eab308" }} />
+                <span>Challenge Instructions</span>
+              </h3>
+              <div className="challenge-active-desc">
+                {activeQuestion.description}
+              </div>
+
+              {validationResult && (
+                <div className={`challenge-status-bar ${validationResult.success ? "success" : "error"}`}>
+                  <span style={{ fontWeight: 700 }}>
+                    {validationResult.success ? "✓ SOLVED: " : "✗ FAILED: "}
+                  </span>
+                  <span>{validationResult.message}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar Draggable Divider */}
+        {isDesktop && (
+          <div 
+            className={`resize-divider ${draggingDivider === "sidebar" ? "dragging" : ""}`}
+            onMouseDown={handleSidebarMouseDown}
+          />
+        )}
+
         {/* Left Card: CODE EDITOR */}
         <div 
           className="modern-card"
           style={{
-            width: isDesktop ? `${leftWidth}%` : "100%",
+            width: isDesktop ? `${editorWidth}%` : "100%",
             flexShrink: 0,
             flexGrow: 0
           }}
@@ -448,16 +630,18 @@ const App = () => {
         </div>
 
         {/* Panel Draggable Divider */}
-        <div 
-          className={`resize-divider ${isDragging ? "dragging" : ""}`}
-          onMouseDown={handleMouseDown}
-        />
+        {isDesktop && (
+          <div 
+            className={`resize-divider ${draggingDivider === "editor" ? "dragging" : ""}`}
+            onMouseDown={handleEditorMouseDown}
+          />
+        )}
 
         {/* Right Card: PREVIEW & OUTPUT */}
         <div 
           style={{ 
-            width: isDesktop ? `${100 - leftWidth}%` : "100%", 
-            flexShrink: 0, 
+            width: isDesktop ? `${100 - sidebarWidth - editorWidth}%` : "100%", 
+            flexShrink: 0,
             flexGrow: 0,
             height: isDesktop ? "100%" : "auto",
             display: "flex",

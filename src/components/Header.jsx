@@ -6,17 +6,16 @@ import {
   FileCode,
   Binary,
   Layers,
-  Sparkles
+  Sparkles,
+  Trophy
 } from "lucide-react";
 
 const Header = ({ 
   env, 
   setEnv, 
-  autoRun, 
-  setAutoRun, 
   showSettings, 
   setShowSettings, 
-  handleRunCode 
+  handleRunCode
 }) => {
   return (
     <header className="modern-header">
@@ -86,29 +85,13 @@ const Header = ({
         
         <button 
           className="btn-minimal" 
-          style={{ backgroundColor: autoRun ? "rgba(16, 185, 129, 0.08)" : "var(--bg-tertiary)" }}
-          onClick={() => setAutoRun(!autoRun)}
+          style={{ backgroundColor: "rgba(59, 130, 246, 0.18)", borderColor: "rgba(59, 130, 246, 0.4)" }}
+          onClick={handleRunCode}
+          title="Run Code (Ctrl+S)"
         >
-          <span style={{
-            width: "6px",
-            height: "6px",
-            borderRadius: "50%",
-            backgroundColor: autoRun ? "var(--neon-green)" : "var(--text-secondary)",
-            display: "inline-block"
-          }} />
-          <span>Auto Run</span>
+          <Play size={14} fill="var(--accent-color)" style={{ color: "var(--accent-color)" }} />
+          <span style={{ color: "var(--accent-color)", fontWeight: 600 }}>Run</span>
         </button>
-
-        {!autoRun && (
-          <button 
-            className="btn-minimal" 
-            style={{ backgroundColor: "rgba(59, 130, 246, 0.2)" }}
-            onClick={handleRunCode}
-          >
-            <Play size={14} fill="white" />
-            <span>Run</span>
-          </button>
-        )}
       </div>
     </header>
   );
