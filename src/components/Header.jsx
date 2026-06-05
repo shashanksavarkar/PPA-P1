@@ -2,17 +2,10 @@ import React from "react";
 import { 
   Play, 
   Code2, 
-  Sliders, 
-  FileCode,
-  Binary,
-  Layers,
-  Sparkles,
-  Trophy
+  Sliders
 } from "lucide-react";
 
 const Header = ({ 
-  env, 
-  setEnv, 
   showSettings, 
   setShowSettings, 
   handleRunCode
@@ -31,45 +24,6 @@ const Header = ({
             Multi-Language Compiler Sandbox
           </p>
         </div>
-      </div>
-
-      {/* Environment selectors */}
-      <div className="environment-selector">
-        <button 
-          className={`btn-minimal ${env === "web" ? "active" : ""}`}
-          onClick={() => setEnv("web")}
-        >
-          <Layers size={14} />
-          <span>HTML/CSS</span>
-        </button>
-        <button 
-          className={`btn-minimal ${env === "js" ? "active" : ""}`}
-          onClick={() => setEnv("js")}
-        >
-          <Sparkles size={14} />
-          <span>JavaScript</span>
-        </button>
-        <button 
-          className={`btn-minimal ${env === "python" ? "active" : ""}`}
-          onClick={() => setEnv("python")}
-        >
-          <FileCode size={14} />
-          <span>Python</span>
-        </button>
-        <button 
-          className={`btn-minimal ${env === "c" ? "active" : ""}`}
-          onClick={() => setEnv("c")}
-        >
-          <Binary size={14} />
-          <span>C</span>
-        </button>
-        <button 
-          className={`btn-minimal ${env === "cpp" ? "active" : ""}`}
-          onClick={() => setEnv("cpp")}
-        >
-          <Binary size={14} />
-          <span>C++</span>
-        </button>
       </div>
 
       {/* Preferences toggles */}

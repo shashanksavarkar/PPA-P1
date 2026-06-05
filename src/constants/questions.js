@@ -3,12 +3,13 @@
  * 
  * Each question object contains:
  * - id: Unique identifier
- * - env: Environment type ("web", "js", "python", "c", "cpp")
+ * - env: Environment type ("web")
  * - title: Display title
  * - difficulty: "Easy", "Medium", "Hard"
  * - description: Detailed challenge instructions
+ * - changesToBeDone: List of explicit goals/actions to check off
  * - initialCode: Default starting code that contains bugs/errors to fix
- * - validation: A function or ruleset to evaluate user code correctness
+ * - validate: A function or ruleset to evaluate user code correctness
  */
 
 export const QUESTIONS = [
@@ -17,13 +18,16 @@ export const QUESTIONS = [
     env: "web",
     title: "Correct Semantic Tags",
     difficulty: "Easy",
-    description: "The current page uses generic `<span>` and `<div>` tags for structural headings and paragraphs. Correct them to use the designated tags:\n1. Change the outer title tag from `<span>` to `<h1>`.\n2. Change the subtitle tag from `<div>` to `<p>`. \n\nEnsure that the text inside the tags remains exactly the same.",
+    description: "Correct the structure of the elements in the HTML code to use standard semantic tags instead of generic spans and divs. Heading tags are used for main titles, while paragraph tags are used for description texts.",
+    changesToBeDone: [
+      "Change the outer title element in your HTML from a <span> to an <h1> tag.",
+      "Change the subtitle element in your HTML from a <div> to a <p> tag.",
+      "Keep the text inside the title as exactly 'Welcome to Developer Playground'.",
+      "Keep the text inside the subtitle as exactly 'Start your learning journey by writing clean code.'."
+    ],
     initialCode: {
       html: `<div class="card">
-  <!-- TODO: Change this span to h1 -->
   <span>Welcome to Developer Playground</span>
-  
-  <!-- TODO: Change this div to p -->
   <div>Start your learning journey by writing clean code.</div>
 </div>`,
       css: `.card {
@@ -46,8 +50,7 @@ p {
 }`,
       js: `console.log("HTML Challenge Loaded");`
     },
-    // Validation function runs in the context of the sandbox or DOM checks
-    validate: (html, css, js) => {
+    validate: (html, css, js, logs) => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
       
@@ -80,18 +83,29 @@ p {
   },
   {
     id: "js-variable-correction",
-    env: "js",
+    env: "web",
     title: "Fix Constant Reassignment",
     difficulty: "Easy",
-    description: "The script tries to modify a variable declared with `const`, which causes a runtime error. Modify the variable declaration so that it can be reassigned successfully.",
+    description: "The script in app.js tries to modify a variable declared with `const`, which causes a runtime error in JavaScript. Change the declaration so that it can be reassigned successfully.",
+    changesToBeDone: [
+      "In app.js, make sure `counter` is not declared as a `const` so that it can be reassigned.",
+      "Initialize `counter` to `1` and reassign it to `counter + 1`.",
+      "Print the outcome to the console using console.log() as 'Counter is: ' followed by the counter value.",
+      "Confirm that 'Counter is: 2' is printed in the Console Logs without runtime errors."
+    ],
     initialCode: {
-      code: `const counter = 1;
+      html: `<!-- JavaScript challenge is active, see Console Logs -->
+<div class="card" style="text-align: center; padding: 20px; font-family: sans-serif; color: white; background: #0f172a; border-radius: 8px;">
+  <h3>Constant Reassignment Challenge</h3>
+  <p>Open the Console Logs at the bottom right to see execution output.</p>
+</div>`,
+      css: ``,
+      js: `const counter = 1;
 counter = counter + 1;
 console.log("Counter is: " + counter);`
     },
-    validate: (code, logs) => {
-      const hasConstReassignment = code.includes("const counter =");
-      const hasCounterIncrement = code.match(/counter\s*=\s*/);
+    validate: (html, css, js, logs) => {
+      const hasConstReassignment = js.includes("const counter =");
       const outputLog = logs.find(log => log.type === "log" && log.message.includes("Counter is: 2"));
       const runtimeError = logs.find(log => log.type === "error");
 
@@ -102,7 +116,7 @@ console.log("Counter is: " + counter);`
         return { success: false, message: "Variables declared with 'const' cannot be reassigned. Use a different variable declaration." };
       }
       if (!outputLog) {
-        return { success: false, message: "The terminal output must show: 'Counter is: 2'." };
+        return { success: false, message: "The Console Logs output must show: 'Counter is: 2'." };
       }
 
       return { success: true, message: "Variable type fixed and reassigned successfully!" };
