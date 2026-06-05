@@ -13,7 +13,6 @@ import {
   DEFAULT_CPP
 } from "./constants/templates";
 
-import { SNIPPETS } from "./constants/snippets";
 
 import {
   compileWebSandbox,
@@ -175,44 +174,32 @@ const App = () => {
     }
   };
 
-  // Load a preset code template snippet
-  const handleLoadSnippet = (e) => {
-    const snippetId = e.target.value;
-    if (!snippetId) return;
-
-    const snippetList = SNIPPETS[env];
-    if (!snippetList) return;
-
-    const snippet = snippetList.find(s => s.id === snippetId);
-    if (!snippet) return;
-
-    if (env === "web") {
-      setHtmlCode(snippet.html);
-      setCssCode(snippet.css);
-      setWebJsCode(snippet.js);
-      try {
-        localStorage.setItem("ppa_playground_html", snippet.html);
-        localStorage.setItem("ppa_playground_css", snippet.css);
-        localStorage.setItem("ppa_playground_webjs", snippet.js);
-      } catch(err){}
-    } else {
-      const code = snippet.code;
-      if (env === "js") {
-        setJsCode(code);
-        try { localStorage.setItem("ppa_playground_js", code); } catch(err){}
+  // Reset current environment to default boilerplate
+  const handleResetCode = () => {
+    if (window.confirm("Are you sure you want to reset the current editor to the boilerplate?")) {
+      if (env === "web") {
+        setHtmlCode(DEFAULT_HTML);
+        setCssCode(DEFAULT_CSS);
+        setWebJsCode(DEFAULT_WEB_JS);
+        try {
+          localStorage.setItem("ppa_playground_html", DEFAULT_HTML);
+          localStorage.setItem("ppa_playground_css", DEFAULT_CSS);
+          localStorage.setItem("ppa_playground_webjs", DEFAULT_WEB_JS);
+        } catch(err){}
+      } else if (env === "js") {
+        setJsCode(DEFAULT_JS);
+        try { localStorage.setItem("ppa_playground_js", DEFAULT_JS); } catch(err){}
       } else if (env === "python") {
-        setPythonCode(code);
-        try { localStorage.setItem("ppa_playground_python", code); } catch(err){}
+        setPythonCode(DEFAULT_PYTHON);
+        try { localStorage.setItem("ppa_playground_python", DEFAULT_PYTHON); } catch(err){}
       } else if (env === "c") {
-        setCCode(code);
-        try { localStorage.setItem("ppa_playground_c", code); } catch(err){}
+        setCCode(DEFAULT_C);
+        try { localStorage.setItem("ppa_playground_c", DEFAULT_C); } catch(err){}
       } else if (env === "cpp") {
-        setCppCode(code);
-        try { localStorage.setItem("ppa_playground_cpp", code); } catch(err){}
+        setCppCode(DEFAULT_CPP);
+        try { localStorage.setItem("ppa_playground_cpp", DEFAULT_CPP); } catch(err){}
       }
     }
-    
-    e.target.value = ""; // reset dropdown value
   };
 
   // Monaco Editor keybinding registration for Ctrl+S
@@ -368,31 +355,16 @@ const App = () => {
                 {getActiveFileName()}
               </span>
 
-              {/* Snippet Presets Selector */}
-              {SNIPPETS[env] && SNIPPETS[env].length > 0 && (
-                <select
-                  onChange={handleLoadSnippet}
-                  defaultValue=""
-                  style={{
-                    backgroundColor: "var(--bg-tertiary)",
-                    border: "1px solid var(--border-color)",
-                    color: "var(--text-secondary)",
-                    fontSize: "0.75rem",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    outline: "none",
-                    fontFamily: "var(--ui-font)"
-                  }}
-                >
-                  <option value="" disabled>Presets...</option>
-                  {SNIPPETS[env].map(snippet => (
-                    <option key={snippet.id} value={snippet.id}>
-                      {snippet.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+              {/* Reset to Boilerplate Button */}
+              <button 
+                className="btn-minimal"
+                style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                onClick={handleResetCode}
+                title="Reset to Boilerplate"
+              >
+                <RefreshCw size={12} style={{ marginRight: "4px" }} />
+                <span>Reset</span>
+              </button>
 
               <button 
                 className="btn-minimal"
