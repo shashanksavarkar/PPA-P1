@@ -1,138 +1,97 @@
 [
   {
-    "id": "html-list-structure",
+    "id": "master-store-manager",
     "env": "web",
-    "title": "Fix Shopping List Structure",
-    "difficulty": "Easy",
-    "description": "Correct the HTML structure by replacing generic tags with proper semantic list tags.",
-    "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Shopping List</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <div class=\"shopping-list\">\n      <div>Milk</div>\n      <div>Bread</div>\n      <div>Eggs</div>\n    </div>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
-    "initialCss": "body {\n  font-family: sans-serif;\n  margin: 20px;\n  background-color: #0f172a;\n  color: #f8fafc;\n}\n.shopping-list {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}",
-    "initialJs": "console.log(\"Shopping List loaded\");",
+    "title": "Master Store Manager Dashboard",
+    "difficulty": "Hard",
+    "description": "Construct a store management console. You must replace structural div wrappers, create stats layouts, write error-free JS using modern keywords, log array status, and implement interactive elements to add inventory items dynamically.",
+    "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Store Manager</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <!-- Replace this div with <main class=\"dashboard\"> -->\n    <div class=\"dashboard\">\n      <h1 id=\"title\">Store Manager</h1>\n      <p class=\"subtitle\">Welcome to your Dashboard</p>\n      \n      <div class=\"stats-grid\">\n        <!-- Create exactly 3 elements with class \"stat-card\" here -->\n      </div>\n\n      <div class=\"controls\">\n        <input type=\"text\" id=\"new-item-input\" placeholder=\"Enter item name...\">\n        <button id=\"add-item-btn\">Add Item</button>\n      </div>\n\n      <ul id=\"item-list\">\n        <!-- Items added will go here -->\n      </ul>\n    </div>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+    "initialCss": "body {\n  font-family: sans-serif;\n  background-color: #0f172a;\n  color: #f8fafc;\n  margin: 20px;\n}\n.dashboard {\n  max-width: 600px;\n  margin: 0 auto;\n  background: #1e293b;\n  padding: 20px;\n  border-radius: 8px;\n}\n.stats-grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 10px;\n  margin: 20px 0;\n}\n.stat-card {\n  background: #334155;\n  padding: 10px;\n  border-radius: 4px;\n  text-align: center;\n}\n.controls {\n  display: flex;\n  gap: 10px;\n  margin-bottom: 20px;\n}\ninput {\n  flex-grow: 1;\n  padding: 8px;\n  border-radius: 4px;\n  border: 1px solid #475569;\n  background: #0f172a;\n  color: #fff;\n}\nbutton {\n  padding: 8px 16px;\n  background: #3b82f6;\n  color: #fff;\n  border: none;\n  border-radius: 4px;\n  cursor: pointer;\n}",
+    "initialJs": "// Use let/const only (no var). Create an array 'inventory' with 3 initial items: 'Apple', 'Orange', 'Pear'.\nconst inventory = [\"Apple\", \"Orange\", \"Pear\"];\n\n// Log the initial count to the console using string \"Initial count: X\" where X is inventory length.\nconsole.log(\"Initial count:\", inventory.length);\n\n// Add functionality to get input from '#new-item-input', add to 'inventory' array via .push(),\n// and append to '#item-list' when '#add-item-btn' is clicked.\n",
     "changesToBeDone": [
-      "Replace the container <div> with a <ul> element.",
-      "Replace each <span> item with an <li> element.",
-      "Keep the text values exactly as 'Milk', 'Bread', and 'Eggs'."
+      "Replace the container <div> with a <main> element with class 'dashboard'.",
+      "Ensure the heading with id 'title' has text 'Store Manager'.",
+      "Ensure the subtitle paragraph contains the word 'Dashboard'.",
+      "Create exactly 3 statistic cards with class 'stat-card' inside the grid.",
+      "Write your JavaScript using only let or const (no 'var' keyword allowed).",
+      "Log the text 'Initial count: 3' to the console on page load.",
+      "Ensure the console remains free of runtime/compiler errors.",
+      "Use the array '.push()' method in your JavaScript file.",
+      "Verify that the text input box accepts values correctly.",
+      "On clicking 'Add Item', append the new item into the '#item-list' list."
     ],
     "rules": [
       {
-        "type": "TAG_NOT_EXISTS",
-        "selector": ".shopping-list > div",
-        "errorMessage": "The shopping list container should not use a <div> tag."
+        "type": "TAG_EXISTS",
+        "selector": "main.dashboard",
+        "stepIndex": 0,
+        "errorMessage": "Missing <main> element with class 'dashboard'."
       },
       {
-        "type": "TAG_EXISTS",
-        "selector": "ul.shopping-list",
-        "errorMessage": "Expected a <ul> element with class 'shopping-list'."
+        "type": "TAG_NOT_EXISTS",
+        "selector": "div.dashboard",
+        "stepIndex": 0,
+        "errorMessage": "The outer container must not be a <div> element."
+      },
+      {
+        "type": "TEXT_EQUALS",
+        "selector": "h1#title",
+        "value": "Store Manager",
+        "stepIndex": 1,
+        "errorMessage": "The title text must match 'Store Manager' exactly."
+      },
+      {
+        "type": "TEXT_CONTAINS",
+        "selector": ".subtitle",
+        "value": "Dashboard",
+        "stepIndex": 2,
+        "errorMessage": "The subtitle must contain the word 'Dashboard'."
       },
       {
         "type": "TAG_COUNT",
-        "selector": "ul.shopping-list > li",
+        "selector": ".stats-grid > .stat-card",
         "value": 3,
-        "errorMessage": "Expected exactly 3 list items inside the shopping list."
+        "stepIndex": 3,
+        "errorMessage": "Expected exactly 3 elements with class 'stat-card' inside 'stats-grid'."
       },
       {
-        "type": "TEXT_EQUALS",
-        "selector": "ul.shopping-list > li:nth-of-type(1)",
-        "value": "Milk",
-        "errorMessage": "The first list item must be 'Milk'."
-      },
-      {
-        "type": "TEXT_EQUALS",
-        "selector": "ul.shopping-list > li:nth-of-type(2)",
-        "value": "Bread",
-        "errorMessage": "The second list item must be 'Bread'."
-      },
-      {
-        "type": "TEXT_EQUALS",
-        "selector": "ul.shopping-list > li:nth-of-type(3)",
-        "value": "Eggs",
-        "errorMessage": "The third list item must be 'Eggs'."
-      }
-    ]
-  },
-  {
-    "id": "js-array-update",
-    "env": "web",
-    "title": "Update Array Correctly",
-    "difficulty": "Easy",
-    "description": "Modify the JavaScript code so that a new value is successfully added to the array and displayed in the console.",
-    "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Array Update</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <h1>Check the Console Logs below</h1>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
-    "initialCss": "body {\n  font-family: sans-serif;\n  margin: 20px;\n  background-color: #0f172a;\n  color: #f8fafc;\n}",
-    "initialJs": "// Create an array called 'fruits' with 'Apple' and 'Banana'\nconst fruits = [\"Apple\", \"Banana\"];\n\n// Add 'Orange' to the fruits array\n\n\n// Log the length of fruits array\nconsole.log(fruits.length);",
-    "changesToBeDone": [
-      "Create an array called 'fruits' containing 'Apple' and 'Banana'.",
-      "Add 'Orange' to the array using the correct array method.",
-      "Log the updated array length to the console.",
-      "Ensure the Console Logs output shows '3'."
-    ],
-    "rules": [
-      {
-        "type": "CONSOLE_NO_ERRORS",
-        "errorMessage": "Your code produced runtime errors. Fix all console errors."
-      },
-      {
-        "type": "JS_CODE_INCLUDES",
-        "value": "fruits.push",
-        "errorMessage": "Use the '.push()' method to add a new item to the array."
+        "type": "JS_CODE_EXCLUDES",
+        "value": "var ",
+        "stepIndex": 4,
+        "errorMessage": "Do not use 'var' keyword. Use 'let' or 'const'."
       },
       {
         "type": "CONSOLE_LOG_CONTAINS",
-        "value": "3",
-        "errorMessage": "The Console Logs output must contain the updated array length '3'."
-      }
-    ]
-  },
-  {
-    "id": "todo-list-app",
-    "env": "web",
-    "title": "Simple Todo List",
-    "difficulty": "Medium",
-    "description": "Create a simple todo list app where users can add tasks dynamically using JavaScript.",
-    "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Simple Todo App</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <div class=\"todo-container\">\n      <h2>My Todo List</h2>\n      <!-- Add input field and button here -->\n      \n      <!-- Add unordered list here -->\n    </div>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
-    "initialCss": "body {\n  font-family: sans-serif;\n  margin: 20px;\n  background-color: #0f172a;\n  color: #f8fafc;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 80vh;\n}\n.todo-container {\n  background: #1e293b;\n  padding: 20px;\n  border-radius: 8px;\n  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);\n  width: 300px;\n}",
-    "initialJs": "// Todo list logic",
-    "changesToBeDone": [
-      "Add an input field with id 'todo-input'.",
-      "Add a button with id 'add-task-btn' and text 'Add Task'.",
-      "Add an unordered list with id 'todo-list'.",
-      "In app.js, add functionality to append a new <li> item when the button is clicked.",
-      "Center the app layout using CSS."
-    ],
-    "rules": [
-      {
-        "type": "TAG_EXISTS",
-        "selector": "#todo-input",
-        "errorMessage": "Missing input field with id 'todo-input'."
+        "value": "Initial count: 3",
+        "stepIndex": 5,
+        "errorMessage": "The console must output the string 'Initial count: 3'."
       },
       {
-        "type": "TAG_EXISTS",
-        "selector": "#add-task-btn",
-        "errorMessage": "Missing button with id 'add-task-btn'."
+        "type": "CONSOLE_NO_ERRORS",
+        "stepIndex": 6,
+        "errorMessage": "Correct any runtime script errors in the console."
       },
       {
-        "type": "TAG_EXISTS",
-        "selector": "#todo-list",
-        "errorMessage": "Missing unordered list with id 'todo-list'."
-      },
-      {
-        "type": "TEXT_EQUALS",
-        "selector": "#add-task-btn",
-        "value": "Add Task",
-        "errorMessage": "The button text must be exactly 'Add Task'."
+        "type": "JS_CODE_INCLUDES",
+        "value": ".push",
+        "stepIndex": 7,
+        "errorMessage": "Your script must use '.push()' to append items to the array."
       },
       {
         "type": "INPUT_AND_ASSERT",
-        "selector": "#todo-input",
-        "value": "Learn JavaScript",
-        "targetSelector": "#todo-input",
-        "errorMessage": "The input field should accept the task text correctly."
+        "selector": "#new-item-input",
+        "value": "Banana",
+        "targetSelector": "#new-item-input",
+        "stepIndex": 8,
+        "errorMessage": "The text input should register change events correctly."
       },
       {
         "type": "CLICK_AND_ASSERT",
-        "selector": "#add-task-btn",
-        "targetSelector": "#todo-list > li:nth-of-type(1)",
-        "value": "Learn JavaScript",
-        "errorMessage": "Clicking the add button should append the task to the todo list."
+        "selector": "#add-item-btn",
+        "targetSelector": "#item-list > li:nth-of-type(1)",
+        "value": "Banana",
+        "stepIndex": 9,
+        "errorMessage": "Clicking the 'Add Item' button must append the new item to the '#item-list'."
       }
     ]
   }
