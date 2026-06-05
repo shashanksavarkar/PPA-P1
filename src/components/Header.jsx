@@ -2,13 +2,17 @@ import React from "react";
 import { 
   Play, 
   Code2, 
-  Sliders
+  Sliders,
+  Sun,
+  Moon
 } from "lucide-react";
 
 const Header = ({ 
   showSettings, 
   setShowSettings, 
-  handleRunCode
+  handleRunCode,
+  uiTheme,
+  setUiTheme
 }) => {
   return (
     <header className="modern-header">
@@ -28,6 +32,17 @@ const Header = ({
 
       {/* Preferences toggles */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        
+        {/* Sun/Moon Toggle Button */}
+        <button 
+          className="btn-minimal"
+          onClick={() => setUiTheme(uiTheme === "dark" ? "light" : "dark")}
+          title={uiTheme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          style={{ padding: "8px" }}
+        >
+          {uiTheme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
+
         <button 
           className={`btn-minimal ${showSettings ? "active" : ""}`}
           onClick={() => setShowSettings(!showSettings)}
