@@ -11,7 +11,8 @@ import {
   ListTodo,
   CheckCircle,
   XCircle,
-  Play
+  Play,
+  HelpCircle
 } from "lucide-react";
 
 // Local templates defined directly
@@ -99,6 +100,118 @@ const App = () => {
   const [consoleMaximized, setConsoleMaximized] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  // More interactive preferences & workspace states
+  const [uiFontSize, setUiFontSize] = useState(() => {
+    try { return parseInt(localStorage.getItem("ppa_setting_ui_fontsize") || "14", 10); } catch(e) { return 14; }
+  });
+  const [editorTheme, setEditorTheme] = useState(() => {
+    try { return localStorage.getItem("ppa_setting_editor_theme") || "vs-dark"; } catch(e) { return "vs-dark"; }
+  });
+  const [autoCompile, setAutoCompile] = useState(() => {
+    try { return localStorage.getItem("ppa_setting_autocompile") !== "false"; } catch(e) { return true; }
+  });
+  const [tabSize, setTabSize] = useState(() => {
+    try { return parseInt(localStorage.getItem("ppa_setting_tabsize") || "2", 10); } catch(e) { return 2; }
+  });
+  const [visibleHints, setVisibleHints] = useState({});
+  const [celebrated, setCelebrated] = useState(false);
+
+  useEffect(() => {
+    try { localStorage.setItem("ppa_setting_ui_fontsize", uiFontSize.toString()); } catch(e){}
+  }, [uiFontSize]);
+
+  useEffect(() => {
+    try { localStorage.setItem("ppa_setting_editor_theme", editorTheme); } catch(e){}
+  }, [editorTheme]);
+
+  useEffect(() => {
+    try { localStorage.setItem("ppa_setting_autocompile", autoCompile.toString()); } catch(e){}
+  }, [autoCompile]);
+
+  useEffect(() => {
+    try { localStorage.setItem("ppa_setting_tabsize", tabSize.toString()); } catch(e){}
+  }, [tabSize]);
+
+  // Root element font size setter for scaling all rem values dynamically
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${uiFontSize}px`;
+  }, [uiFontSize]);
+
+  // Debounced auto compilation
+  useEffect(() => {
+    if (!autoCompile) return;
+    const timer = setTimeout(() => {
+      const compiled = compileWebSandbox(htmlCode, cssCode, webJsCode);
+      setSrcDoc(compiled);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [htmlCode, cssCode, webJsCode, autoCompile]);
+
+  // Confetti particles generator
+  const triggerConfetti = () => {
+    const duration = 2500;
+    const end = Date.now() + duration;
+    const colors = ["#3b82f6", "#10b981", "#fbbf24", "#ef4444", "#a855f7", "#6366f1"];
+
+    (function frame() {
+      if (Date.now() > end) return;
+      
+      const p = document.createElement("div");
+      p.style.position = "fixed";
+      p.style.width = `${Math.random() * 8 + 4}px`;
+      p.style.height = `${Math.random() * 12 + 6}px`;
+      p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      p.style.left = `${Math.random() * 100}vw`;
+      p.style.top = `-20px`;
+      p.style.opacity = "0.9";
+      p.style.zIndex = "9999";
+      p.style.pointerEvents = "none";
+      p.style.transform = `rotate(${Math.random() * 360}deg)`;
+      p.style.borderRadius = "2px";
+      
+      document.body.appendChild(p);
+
+      let y = -20;
+      let x = parseFloat(p.style.left);
+      const speed = Math.random() * 4 + 3;
+      const drift = Math.random() * 1.6 - 0.8;
+      
+      const interval = setInterval(() => {
+        y += speed;
+        x += drift;
+        p.style.top = `${y}px`;
+        p.style.left = `${x}vw`;
+        p.style.transform = `rotate(${y * 2.5}deg)`;
+        
+        if (y > window.innerHeight) {
+          clearInterval(interval);
+          p.remove();
+        }
+      }, 16);
+      
+      requestAnimationFrame(frame);
+    }());
+  };
+
+  // Celebrate on success
+  useEffect(() => {
+    if (validationResult?.success) {
+      if (!celebrated) {
+        triggerConfetti();
+        setCelebrated(true);
+      }
+    } else {
+      setCelebrated(false);
+    }
+  }, [validationResult?.success, celebrated]);
+
+  const toggleHint = (idx) => {
+    setVisibleHints(prev => ({
+      ...prev,
+      [idx]: !prev[idx]
+    }));
+  };
+
   // Run compiling script
   const handleRunCode = () => {
     setConsoleLogs([]); // reset browser console
@@ -108,6 +221,8 @@ const App = () => {
 
   // Select question handler (doesn't overwrite current editor content, keeping user's codebase clean)
   const handleSelectQuestion = (q) => {
+    setCelebrated(false);
+    setVisibleHints({});
     if (activeQuestion && activeQuestion.id === q.id) {
       setActiveQuestion(null);
       setValidationResult(null);
@@ -337,6 +452,15 @@ const App = () => {
           setFontSize={setFontSize}
           minimap={minimap}
           setMinimap={setMinimap}
+          uiFontSize={uiFontSize}
+          setUiFontSize={setUiFontSize}
+          editorTheme={editorTheme}
+          setEditorTheme={setEditorTheme}
+          autoCompile={autoCompile}
+          setAutoCompile={setAutoCompile}
+          tabSize={tabSize}
+          setTabSize={setTabSize}
+          onClose={() => setShowSettings(false)}
         />
       )}
 
@@ -396,6 +520,33 @@ const App = () => {
           <div style={{ flexGrow: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "14px", minHeight: 0 }}>
             {activeQuestion ? (
               <>
+                {/* Progress Bar */}
+                {(() => {
+                  const totalSteps = activeQuestion.changesToBeDone.length;
+                  let passedSteps = 0;
+                  if (validationResult && validationResult.stepResults) {
+                    passedSteps = Object.values(validationResult.stepResults).filter(r => r.success).length;
+                  }
+                  const progressPercent = totalSteps > 0 ? Math.round((passedSteps / totalSteps) * 100) : 0;
+                  return (
+                    <div style={{ padding: "4px 0", borderBottom: "1px solid var(--border-color)", paddingBottom: "12px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                        <span>CHALLENGE PROGRESS</span>
+                        <span>{progressPercent}%</span>
+                      </div>
+                      <div style={{ width: "100%", height: "6px", backgroundColor: "var(--bg-tertiary)", borderRadius: "3px", overflow: "hidden", border: "1px solid var(--border-color)" }}>
+                        <div style={{
+                          width: `${progressPercent}%`,
+                          height: "100%",
+                          backgroundColor: progressPercent === 100 ? "var(--neon-green)" : "var(--accent-color)",
+                          boxShadow: progressPercent === 100 ? "0 0 8px var(--neon-green)" : "none",
+                          transition: "width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease"
+                        }} />
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Question Statement */}
                 <div>
                   <h3 style={{ fontSize: "0.85rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px", color: "var(--text-primary)", marginBottom: "6px" }}>
@@ -444,17 +595,54 @@ const App = () => {
                         }
                       }
 
+                      const hintText = activeQuestion.hints?.[idx];
+
                       return (
-                        <li key={idx} style={{ display: "flex", gap: "8px", alignItems: "flex-start", fontSize: "0.75rem", color: textColor, lineHeight: "1.4" }}>
-                          <span style={{ display: "flex", alignItems: "center", height: "18px" }}>{stepIcon}</span>
-                          <div>
-                            <span>{change}</span>
-                            {stepResult && !stepResult.success && stepResult.messages.length > 0 && (
-                              <div style={{ fontSize: "0.7rem", color: "var(--neon-red)", marginTop: "2px", fontWeight: 400, opacity: 0.85 }}>
-                                {stepResult.messages[0]}
-                              </div>
+                        <li key={idx} style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.75rem", color: textColor, lineHeight: "1.4", borderBottom: "1px solid rgba(255, 255, 255, 0.02)", paddingBottom: "8px" }}>
+                          <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                            <span style={{ display: "flex", alignItems: "center", height: "18px" }}>{stepIcon}</span>
+                            <div style={{ flexGrow: 1 }}>
+                              <span>{change}</span>
+                              {stepResult && !stepResult.success && stepResult.messages.length > 0 && (
+                                <div style={{ fontSize: "0.7rem", color: "var(--neon-red)", marginTop: "2px", fontWeight: 400, opacity: 0.85 }}>
+                                  {stepResult.messages[0]}
+                                </div>
+                              )}
+                            </div>
+                            {hintText && (
+                              <button
+                                onClick={() => toggleHint(idx)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: visibleHints[idx] ? "var(--accent-color)" : "var(--text-secondary)",
+                                  cursor: "pointer",
+                                  padding: "2px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  opacity: 0.75
+                                }}
+                                title="Show Hint"
+                              >
+                                <HelpCircle size={12} />
+                              </button>
                             )}
                           </div>
+                          {hintText && visibleHints[idx] && (
+                            <div style={{
+                              marginLeft: "22px",
+                              padding: "6px 10px",
+                              backgroundColor: "var(--bg-tertiary)",
+                              borderLeft: "2px solid var(--accent-color)",
+                              borderRadius: "4px",
+                              fontSize: "0.7rem",
+                              color: "var(--text-secondary)",
+                              lineHeight: "1.3",
+                              border: "1px solid var(--border-color)"
+                            }}>
+                              💡 {hintText}
+                            </div>
+                          )}
                         </li>
                       );
                     })}
@@ -612,7 +800,7 @@ const App = () => {
               value={getActiveCode()}
               onChange={handleEditorChange}
               onMount={handleEditorDidMount}
-              theme="vs-dark"
+              theme={editorTheme}
               loading={
                 <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "center", alignItems: "center", gap: "8px", background: "#1e1e1e" }}>
                   <RefreshCw className="animate-spin" size={24} style={{ color: "var(--accent-color)" }} />
@@ -630,7 +818,7 @@ const App = () => {
                 cursorBlinking: "smooth",
                 cursorSmoothCaretAnimation: "on",
                 smoothScrolling: true,
-                tabSize: 2,
+                tabSize: tabSize,
                 scrollBeyondLastLine: false,
                 bracketPairColorization: { enabled: true }
               }}

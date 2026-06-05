@@ -20,6 +20,18 @@
       "Verify that the text input box accepts values correctly.",
       "On clicking 'Add Item', append the new item into the '#item-list' list."
     ],
+    "hints": [
+      "Change `<div class=\"dashboard\">` to `<main class=\"dashboard\">` (and the closing `</div>` to `</main>`).",
+      "Check the `<h1 id=\"title\">` content in the HTML section.",
+      "Make sure the tag with class `.subtitle` has the text 'Welcome to your Dashboard'.",
+      "Insert three tags like `<div class=\"stat-card\">Card</div>` inside the `<div class=\"stats-grid\">`.",
+      "Scan index.js and replace any occurrences of 'var' with 'let' or 'const'.",
+      "In index.js, add `console.log('Initial count: ' + inventory.length);`.",
+      "Clear any script parsing issues or typos inside index.js.",
+      "Verify you are callling `inventory.push(newItem)` inside index.js.",
+      "Make sure the input selector is correct, e.g. `<input id=\"new-item-input\">`.",
+      "Listen for click events on '#add-item-btn', append `<li>${input.value}</li>` to '#item-list'."
+    ],
     "rules": [
       {
         "type": "TAG_EXISTS",
