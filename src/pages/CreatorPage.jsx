@@ -34,16 +34,16 @@ const CreatorPage = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
       {/* Creator Specific Header */}
-      <header className="modern-header" style={{ marginBottom: "20px", flexShrink: 0 }}>
-        <div className="header-title-container">
-          <div style={{ padding: "8px", background: "rgba(79, 70, 229, 0.1)", borderRadius: "8px", display: "flex", border: "1px solid rgba(79, 70, 229, 0.2)" }}>
+      <header className="modern-header creator-glass-header" style={{ marginBottom: "20px", padding: "0 24px", flexShrink: 0, height: "70px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="header-title-container" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ padding: "10px", background: "linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(99, 102, 241, 0.15))", borderRadius: "10px", display: "flex", border: "1px solid rgba(79, 70, 229, 0.25)", boxShadow: "0 2px 8px rgba(79, 70, 229, 0.1)" }}>
             <Sparkles size={20} style={{ color: "var(--accent-color)" }} />
           </div>
           <div>
-            <h1 className="font-ui" style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0 }}>
+            <h1 className="font-ui" style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0, letterSpacing: "-0.01em", background: "linear-gradient(135deg, var(--text-primary), var(--accent-color))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               ASSESSMENT CREATOR & QUESTION MANAGER
             </h1>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "1px" }}>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px", fontWeight: 500 }}>
               Build custom challenges, import text outlines, or manage questions in fullscreen
             </p>
           </div>
@@ -57,7 +57,7 @@ const CreatorPage = () => {
             window.location.href = url.pathname + url.search;
           }}
           title="Return to Playground"
-          style={{ fontWeight: 600, color: "var(--accent-color)", borderColor: "var(--accent-color)" }}
+          style={{ fontWeight: 700, color: "var(--accent-color)", borderColor: "var(--accent-color)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", transition: "all 0.2s ease" }}
         >
           <span>Exit Creator & Back to Playground</span>
         </button>
