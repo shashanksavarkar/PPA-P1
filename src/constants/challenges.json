@@ -1,113 +1,277 @@
 [
-  {
-    "id": "master-store-manager",
-    "env": "web",
-    "title": "Master Store Manager Dashboard",
-    "difficulty": "Hard",
-    "description": "Construct a store management console. You must replace structural div wrappers, create stats layouts, write error-free JS using modern keywords, log array status, and implement interactive elements to add inventory items dynamically.",
-    "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Store Manager</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <!-- Replace this div with <main class=\"dashboard\"> -->\n    <div class=\"dashboard\">\n      <h1 id=\"title\">Store Manager</h1>\n      <p class=\"subtitle\">Welcome to your Dashboard</p>\n      \n      <div class=\"stats-grid\">\n        <!-- Create exactly 3 elements with class \"stat-card\" here -->\n      </div>\n\n      <div class=\"controls\">\n        <input type=\"text\" id=\"new-item-input\" placeholder=\"Enter item name...\">\n        <button id=\"add-item-btn\">Add Item</button>\n      </div>\n\n      <ul id=\"item-list\">\n        <!-- Items added will go here -->\n      </ul>\n    </div>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
-    "initialCss": "body {\n  font-family: sans-serif;\n  background-color: #0f172a;\n  color: #f8fafc;\n  margin: 20px;\n}\n.dashboard {\n  max-width: 600px;\n  margin: 0 auto;\n  background: #1e293b;\n  padding: 20px;\n  border-radius: 8px;\n}\n.stats-grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 10px;\n  margin: 20px 0;\n}\n.stat-card {\n  background: #334155;\n  padding: 10px;\n  border-radius: 4px;\n  text-align: center;\n}\n.controls {\n  display: flex;\n  gap: 10px;\n  margin-bottom: 20px;\n}\ninput {\n  flex-grow: 1;\n  padding: 8px;\n  border-radius: 4px;\n  border: 1px solid #475569;\n  background: #0f172a;\n  color: #fff;\n}\nbutton {\n  padding: 8px 16px;\n  background: #3b82f6;\n  color: #fff;\n  border: none;\n  border-radius: 4px;\n  cursor: pointer;\n}",
-    "initialJs": "// Use let/const only (no var). Create an array 'inventory' with 3 initial items: 'Apple', 'Orange', 'Pear'.\nconst inventory = [\"Apple\", \"Orange\", \"Pear\"];\n\n// Log the initial count to the console using string \"Initial count: X\" where X is inventory length.\nconsole.log(\"Initial count:\", inventory.length);\n\n// Add functionality to get input from '#new-item-input', add to 'inventory' array via .push(),\n// and append to '#item-list' when '#add-item-btn' is clicked.\n",
-    "changesToBeDone": [
-      "Replace the container <div> with a <main> element with class 'dashboard'.",
-      "Ensure the heading with id 'title' has text 'Store Manager'.",
-      "Ensure the subtitle paragraph contains the word 'Dashboard'.",
-      "Create exactly 3 statistic cards with class 'stat-card' inside the grid.",
-      "Write your JavaScript using only let or const (no 'var' keyword allowed).",
-      "Log the text 'Initial count: 3' to the console on page load.",
-      "Ensure the console remains free of runtime/compiler errors.",
-      "Use the array '.push()' method in your JavaScript file.",
-      "Verify that the text input box accepts values correctly.",
-      "On clicking 'Add Item', append the new item into the '#item-list' list."
-    ],
-    "hints": [
-      "Change `<div class=\"dashboard\">` to `<main class=\"dashboard\">` (and the closing `</div>` to `</main>`).",
-      "Check the `<h1 id=\"title\">` content in the HTML section.",
-      "Make sure the tag with class `.subtitle` has the text 'Welcome to your Dashboard'.",
-      "Insert three tags like `<div class=\"stat-card\">Card</div>` inside the `<div class=\"stats-grid\">`.",
-      "Scan index.js and replace any occurrences of 'var' with 'let' or 'const'.",
-      "In index.js, add `console.log('Initial count: ' + inventory.length);`.",
-      "Clear any script parsing issues or typos inside index.js.",
-      "Verify you are callling `inventory.push(newItem)` inside index.js.",
-      "Make sure the input selector is correct, e.g. `<input id=\"new-item-input\">`.",
-      "Listen for click events on '#add-item-btn', append `<li>${input.value}</li>` to '#item-list'."
-    ],
-    "rules": [
-      {
-        "type": "TAG_EXISTS",
-        "selector": "main.dashboard",
-        "stepIndex": 0,
-        "errorMessage": "Missing <main> element with class 'dashboard'."
-      },
-      {
-        "type": "TAG_NOT_EXISTS",
-        "selector": "div.dashboard",
-        "stepIndex": 0,
-        "errorMessage": "The outer container must not be a <div> element."
-      },
-      {
-        "type": "TEXT_EQUALS",
-        "selector": "h1#title",
-        "value": "Store Manager",
-        "stepIndex": 1,
-        "errorMessage": "The title text must match 'Store Manager' exactly."
-      },
-      {
-        "type": "TEXT_CONTAINS",
-        "selector": ".subtitle",
-        "value": "Dashboard",
-        "stepIndex": 2,
-        "errorMessage": "The subtitle must contain the word 'Dashboard'."
-      },
-      {
-        "type": "TAG_COUNT",
-        "selector": ".stats-grid > .stat-card",
-        "value": 3,
-        "stepIndex": 3,
-        "errorMessage": "Expected exactly 3 elements with class 'stat-card' inside 'stats-grid'."
-      },
-      {
-        "type": "JS_CODE_EXCLUDES",
-        "value": "var ",
-        "stepIndex": 4,
-        "errorMessage": "Do not use 'var' keyword. Use 'let' or 'const'."
-      },
-      {
-        "type": "CONSOLE_LOG_CONTAINS",
-        "value": "Initial count: 3",
-        "stepIndex": 5,
-        "errorMessage": "The console must output the string 'Initial count: 3'."
-      },
-      {
-        "type": "CONSOLE_NO_ERRORS",
-        "stepIndex": 6,
-        "errorMessage": "Correct any runtime script errors in the console."
-      },
-      {
-        "type": "JS_CODE_INCLUDES",
-        "value": ".push",
-        "stepIndex": 7,
-        "errorMessage": "Your script must use '.push()' to append items to the array."
-      },
-      {
-        "type": "INPUT_AND_ASSERT",
-        "selector": "#new-item-input",
-        "value": "Banana",
-        "targetSelector": "#new-item-input",
-        "stepIndex": 8,
-        "errorMessage": "The text input should register change events correctly."
-      },
-      {
-        "type": "CLICK_AND_ASSERT",
-        "selector": "#add-item-btn",
-        "targetSelector": "#item-list > li:nth-of-type(1)",
-        "value": "Banana",
-        "stepIndex": 9,
-        "errorMessage": "Clicking the 'Add Item' button must append the new item to the '#item-list'."
-      }
-    ],
-    "solutionHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Store Manager</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <main class=\"dashboard\">\n      <h1 id=\"title\">Store Manager</h1>\n      <p class=\"subtitle\">Welcome to your Dashboard</p>\n      <div class=\"stats-grid\">\n        <div class=\"stat-card\">Total Items</div>\n        <div class=\"stat-card\">In Stock</div>\n        <div class=\"stat-card\">Low Stock</div>\n      </div>\n      <div class=\"controls\">\n        <input type=\"text\" id=\"new-item-input\" placeholder=\"Enter item name...\">\n        <button id=\"add-item-btn\">Add Item</button>\n      </div>\n      <ul id=\"item-list\"></ul>\n    </main>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
-    "solutionCss": "body {\n  font-family: sans-serif;\n  background-color: #0f172a;\n  color: #f8fafc;\n  margin: 20px;\n}\n.dashboard {\n  max-width: 600px;\n  margin: 0 auto;\n  background: #1e293b;\n  padding: 20px;\n  border-radius: 8px;\n}\n.stats-grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 10px;\n  margin: 20px 0;\n}\n.stat-card {\n  background: #334155;\n  padding: 10px;\n  border-radius: 4px;\n  text-align: center;\n}\n.controls {\n  display: flex;\n  gap: 10px;\n  margin-bottom: 20px;\n}\ninput {\n  flex-grow: 1;\n  padding: 8px;\n  border-radius: 4px;\n  border: 1px solid #475569;\n  background: #0f172a;\n  color: #fff;\n}\nbutton {\n  padding: 8px 16px;\n  background: #3b82f6;\n  color: #fff;\n  border: none;\n  border-radius: 4px;\n  cursor: pointer;\n}",
-    "solutionJs": "const inventory = [\"Apple\", \"Orange\", \"Pear\"];\nconsole.log('Initial count: ' + inventory.length);\n\ndocument.getElementById('add-item-btn').addEventListener('click', () => {\n  const input = document.getElementById('new-item-input');\n  const value = input.value.trim();\n  if (!value) return;\n  inventory.push(value);\n  const li = document.createElement('li');\n  li.textContent = value;\n  document.getElementById('item-list').appendChild(li);\n  input.value = '';\n});"
-  }
+    {
+        "id": "html-profile-card",
+        "env": "web",
+        "title": "Build a Profile Card",
+        "difficulty": "Easy",
+        "description": "Create a simple profile card using semantic HTML. Add a profile image, a name heading, a short bio, and a button. Structure it correctly using the right HTML elements.",
+        "inputFormat": [
+            "No user input required — just build the correct HTML structure."
+        ],
+        "outputFormat": [
+            "A visible profile card with an image, name (h2), bio paragraph, and a button with id 'contact-btn'."
+        ],
+        "constraints": [
+            "Use a <section> element with id 'profile-card' as the outer container.",
+            "The name must be inside an <h2> tag with id 'profile-name'.",
+            "The bio must be inside a <p> tag with id 'profile-bio'.",
+            "Include an <img> tag with id 'profile-img' inside the card.",
+            "Include a <button> with id 'contact-btn' and text 'Contact Me'."
+        ],
+        "examples": [
+            {
+                "input": "Static page load",
+                "output": "A profile card showing an image, name, bio paragraph, and a 'Contact Me' button."
+            }
+        ],
+        "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Profile Card</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <!-- Build your profile card here -->\n    <!-- Use a <section id=\"profile-card\"> as the container -->\n    <div id=\"profile-card\">\n      <!-- Add an <img id=\"profile-img\"> here -->\n\n      <!-- Add an <h2 id=\"profile-name\"> with a name -->\n\n      <!-- Add a <p id=\"profile-bio\"> with a short bio -->\n\n      <!-- Add a <button id=\"contact-btn\">Contact Me</button> -->\n    </div>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+        "initialCss": "body {\n  font-family: sans-serif;\n  background: #f0f4f8;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  margin: 0;\n}\n#profile-card {\n  background: #fff;\n  border-radius: 12px;\n  box-shadow: 0 4px 20px rgba(0,0,0,0.1);\n  padding: 30px;\n  text-align: center;\n  max-width: 300px;\n  width: 100%;\n}\n#profile-img {\n  width: 90px;\n  height: 90px;\n  border-radius: 50%;\n  object-fit: cover;\n  margin-bottom: 12px;\n}\n#profile-name {\n  margin: 0 0 8px;\n  color: #1a202c;\n}\n#profile-bio {\n  color: #718096;\n  font-size: 14px;\n}\n#contact-btn {\n  margin-top: 16px;\n  padding: 10px 24px;\n  background: #4f46e5;\n  color: #fff;\n  border: none;\n  border-radius: 8px;\n  cursor: pointer;\n  font-size: 14px;\n}",
+        "initialJs": "// No JavaScript needed for this challenge.\n// Just focus on building the correct HTML structure!",
+        "changesToBeDone": [
+            "Replace the <div id='profile-card'> with a <section id='profile-card'>.",
+            "Add an <img id='profile-img'> with a valid src attribute inside the card.",
+            "Add an <h2 id='profile-name'> with any name text.",
+            "Add a <p id='profile-bio'> with a short bio sentence.",
+            "Add a <button id='contact-btn'> with text 'Contact Me'."
+        ],
+        "hints": [
+            "Change the outer `<div id='profile-card'>` to `<section id='profile-card'>`.",
+            "Add `<img id='profile-img' src='https://i.pravatar.cc/150' alt='Profile'>` inside the section.",
+            "Add `<h2 id='profile-name'>Jane Doe</h2>` below the image.",
+            "Add `<p id='profile-bio'>A passionate web developer.</p>` below the name.",
+            "Add `<button id='contact-btn'>Contact Me</button>` at the bottom."
+        ],
+        "rules": [
+            {
+                "type": "TAG_EXISTS",
+                "selector": "section#profile-card",
+                "stepIndex": 0,
+                "errorMessage": "Missing <section> element with id 'profile-card'. Replace the <div> with <section>."
+            },
+            {
+                "type": "TAG_NOT_EXISTS",
+                "selector": "div#profile-card",
+                "stepIndex": 0,
+                "errorMessage": "The outer container must be a <section>, not a <div>."
+            },
+            {
+                "type": "TAG_EXISTS",
+                "selector": "#profile-img",
+                "stepIndex": 1,
+                "errorMessage": "Missing <img id='profile-img'> inside the profile card."
+            },
+            {
+                "type": "TAG_EXISTS",
+                "selector": "h2#profile-name",
+                "stepIndex": 2,
+                "errorMessage": "Missing <h2 id='profile-name'> for the profile name."
+            },
+            {
+                "type": "TAG_EXISTS",
+                "selector": "p#profile-bio",
+                "stepIndex": 3,
+                "errorMessage": "Missing <p id='profile-bio'> for the profile bio."
+            },
+            {
+                "type": "TAG_EXISTS",
+                "selector": "button#contact-btn",
+                "stepIndex": 4,
+                "errorMessage": "Missing <button id='contact-btn'>."
+            },
+            {
+                "type": "TEXT_EQUALS",
+                "selector": "#contact-btn",
+                "value": "Contact Me",
+                "stepIndex": 4,
+                "errorMessage": "The button text must be 'Contact Me'."
+            }
+        ],
+        "solutionHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Profile Card</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <section id=\"profile-card\">\n      <img id=\"profile-img\" src=\"https://i.pravatar.cc/150\" alt=\"Profile\">\n      <h2 id=\"profile-name\">Jane Doe</h2>\n      <p id=\"profile-bio\">A passionate web developer who loves building beautiful UIs.</p>\n      <button id=\"contact-btn\">Contact Me</button>\n    </section>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+        "solutionCss": "body {\n  font-family: sans-serif;\n  background: #f0f4f8;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  margin: 0;\n}\n#profile-card {\n  background: #fff;\n  border-radius: 12px;\n  box-shadow: 0 4px 20px rgba(0,0,0,0.1);\n  padding: 30px;\n  text-align: center;\n  max-width: 300px;\n  width: 100%;\n}\n#profile-img {\n  width: 90px;\n  height: 90px;\n  border-radius: 50%;\n  object-fit: cover;\n  margin-bottom: 12px;\n}\n#profile-name {\n  margin: 0 0 8px;\n  color: #1a202c;\n}\n#profile-bio {\n  color: #718096;\n  font-size: 14px;\n}\n#contact-btn {\n  margin-top: 16px;\n  padding: 10px 24px;\n  background: #4f46e5;\n  color: #fff;\n  border: none;\n  border-radius: 8px;\n  cursor: pointer;\n  font-size: 14px;\n}",
+        "solutionJs": "// No JavaScript needed for this challenge."
+    },
+    {
+        "id": "css-flex-navbar",
+        "env": "web",
+        "title": "Style a Flexbox Navbar",
+        "difficulty": "Easy",
+        "description": "Style a navigation bar using CSS Flexbox. The logo should be on the left and the navigation links should be on the right. Make the navbar look polished with a dark background and hover effects on the links.",
+        "inputFormat": [
+            "No user input — just write CSS to style the existing HTML structure."
+        ],
+        "outputFormat": [
+            "A horizontal navbar with the logo left-aligned and nav links right-aligned.",
+            "Nav links change color on hover."
+        ],
+        "constraints": [
+            "The <nav id='main-nav'> must use display: flex.",
+            "The logo and links must be on opposite ends (space-between).",
+            "Nav links must have a hover color change.",
+            "The navbar background must not be white."
+        ],
+        "examples": [
+            {
+                "input": "Hover over a nav link",
+                "output": "The nav link changes its color on hover."
+            }
+        ],
+        "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Flex Navbar</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <nav id=\"main-nav\">\n      <div id=\"logo\">MyBrand</div>\n      <ul id=\"nav-links\">\n        <li><a href=\"#\">Home</a></li>\n        <li><a href=\"#\">About</a></li>\n        <li><a href=\"#\">Contact</a></li>\n      </ul>\n    </nav>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+        "initialCss": "/* Style the navbar using Flexbox */\n\nbody {\n  margin: 0;\n  font-family: sans-serif;\n}\n\n/* Style #main-nav: add background color, padding, and use flexbox */\n#main-nav {\n  /* your styles here */\n}\n\n#logo {\n  font-size: 22px;\n  font-weight: bold;\n  color: #fff;\n}\n\n/* Remove bullet points from the list */\n#nav-links {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  /* use flexbox and add gap between items */\n}\n\n#nav-links a {\n  text-decoration: none;\n  color: #cbd5e1;\n  /* add a transition for smooth color change */\n}\n\n/* Make links change color on hover */\n#nav-links a:hover {\n  /* your hover color here */\n}",
+        "initialJs": "// No JavaScript needed for this challenge.",
+        "changesToBeDone": [
+            "Set display: flex on #main-nav.",
+            "Set justify-content: space-between on #main-nav so logo is left and links are right.",
+            "Set align-items: center on #main-nav.",
+            "Add a dark background color to #main-nav (not white).",
+            "Add padding to #main-nav.",
+            "Set display: flex and gap on #nav-links.",
+            "Add a hover color (not #cbd5e1) on #nav-links a:hover.",
+            "Add a transition on #nav-links a for smooth hover effect."
+        ],
+        "hints": [
+            "Add `display: flex; justify-content: space-between; align-items: center;` to `#main-nav`.",
+            "Give `#main-nav` a background like `background: #1e293b;` and `padding: 16px 32px;`.",
+            "Add `display: flex; gap: 24px;` to `#nav-links`.",
+            "Add `transition: color 0.2s;` to `#nav-links a`.",
+            "Add `color: #6366f1;` to `#nav-links a:hover`."
+        ],
+        "rules": [
+            {
+                "type": "CSS_PROP_EXISTS",
+                "selector": "#main-nav",
+                "property": "display",
+                "value": "flex",
+                "stepIndex": 0,
+                "errorMessage": "#main-nav must have display: flex."
+            },
+            {
+                "type": "CSS_PROP_EXISTS",
+                "selector": "#main-nav",
+                "property": "justify-content",
+                "value": "space-between",
+                "stepIndex": 1,
+                "errorMessage": "#main-nav must have justify-content: space-between."
+            },
+            {
+                "type": "CSS_PROP_NOT_VALUE",
+                "selector": "#main-nav",
+                "property": "background-color",
+                "value": "rgb(255, 255, 255)",
+                "stepIndex": 2,
+                "errorMessage": "The navbar background must not be white."
+            },
+            {
+                "type": "CSS_PROP_EXISTS",
+                "selector": "#nav-links",
+                "property": "display",
+                "value": "flex",
+                "stepIndex": 3,
+                "errorMessage": "#nav-links must have display: flex to align links horizontally."
+            },
+            {
+                "type": "CSS_CODE_INCLUDES",
+                "value": "#nav-links a:hover",
+                "stepIndex": 4,
+                "errorMessage": "You must add a :hover style for #nav-links a."
+            }
+        ],
+        "solutionHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Flex Navbar</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <nav id=\"main-nav\">\n      <div id=\"logo\">MyBrand</div>\n      <ul id=\"nav-links\">\n        <li><a href=\"#\">Home</a></li>\n        <li><a href=\"#\">About</a></li>\n        <li><a href=\"#\">Contact</a></li>\n      </ul>\n    </nav>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+        "solutionCss": "body {\n  margin: 0;\n  font-family: sans-serif;\n}\n#main-nav {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  background: #1e293b;\n  padding: 16px 32px;\n}\n#logo {\n  font-size: 22px;\n  font-weight: bold;\n  color: #fff;\n}\n#nav-links {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  display: flex;\n  gap: 24px;\n}\n#nav-links a {\n  text-decoration: none;\n  color: #cbd5e1;\n  transition: color 0.2s;\n}\n#nav-links a:hover {\n  color: #6366f1;\n}",
+        "solutionJs": "// No JavaScript needed for this challenge."
+    },
+    {
+        "id": "js-counter-app",
+        "env": "web",
+        "title": "Interactive Counter App",
+        "difficulty": "Medium",
+        "description": "Build an interactive counter using JavaScript. There are three buttons — Increment, Decrement, and Reset. The counter value must be shown in a <span> element. The count must never go below 0, and must change color when it reaches 10 or above.",
+        "inputFormat": [
+            "A button with id 'btn-increment' to increase the counter.",
+            "A button with id 'btn-decrement' to decrease the counter (minimum 0).",
+            "A button with id 'btn-reset' to reset counter to 0."
+        ],
+        "outputFormat": [
+            "A <span id='count-display'> showing the current count.",
+            "Count changes to red color when >= 10.",
+            "Count stays at 0 when decrement is clicked at 0."
+        ],
+        "constraints": [
+            "Use let or const only (no var).",
+            "The count must not go below 0.",
+            "When count >= 10, the #count-display color must be red.",
+            "When count < 10, the color must revert to the default (not red).",
+            "The console must have no errors."
+        ],
+        "examples": [
+            {
+                "input": "Click 'Increment' 10 times",
+                "output": "Count displays 10 and turns red."
+            },
+            {
+                "input": "Click 'Decrement' when count is 0",
+                "output": "Count stays at 0."
+            },
+            {
+                "input": "Click 'Reset'",
+                "output": "Count resets to 0 and color reverts."
+            }
+        ],
+        "initialHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Counter App</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <div class=\"counter-container\">\n      <h1>Counter</h1>\n      <span id=\"count-display\">0</span>\n      <div class=\"btn-group\">\n        <button id=\"btn-decrement\">−</button>\n        <button id=\"btn-reset\">Reset</button>\n        <button id=\"btn-increment\">+</button>\n      </div>\n    </div>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+        "initialCss": "body {\n  font-family: sans-serif;\n  background: #0f172a;\n  color: #f8fafc;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  margin: 0;\n}\n.counter-container {\n  background: #1e293b;\n  border-radius: 16px;\n  padding: 40px 60px;\n  text-align: center;\n  box-shadow: 0 8px 32px rgba(0,0,0,0.3);\n}\nh1 {\n  margin-top: 0;\n  letter-spacing: 2px;\n  font-size: 18px;\n  color: #94a3b8;\n  text-transform: uppercase;\n}\n#count-display {\n  display: block;\n  font-size: 72px;\n  font-weight: bold;\n  margin: 16px 0;\n  transition: color 0.3s;\n}\n.btn-group {\n  display: flex;\n  gap: 12px;\n  justify-content: center;\n  margin-top: 16px;\n}\nbutton {\n  padding: 12px 24px;\n  border: none;\n  border-radius: 8px;\n  font-size: 18px;\n  cursor: pointer;\n  background: #334155;\n  color: #f8fafc;\n  transition: background 0.2s;\n}\nbutton:hover {\n  background: #475569;\n}",
+        "initialJs": "// Declare a variable 'count' starting at 0 using let or const\n// let count = 0;\n\n// Get references to the buttons and the display element\n// const display = document.getElementById('count-display');\n// const btnInc = document.getElementById('btn-increment');\n// const btnDec = document.getElementById('btn-decrement');\n// const btnReset = document.getElementById('btn-reset');\n\n// Write a function 'updateDisplay()' that:\n//   1. Sets display.textContent to the current count\n//   2. If count >= 10, sets display.style.color = 'red', else resets it\n\n// Add click event listeners to each button\n",
+        "changesToBeDone": [
+            "Declare 'count' using let (not var), starting at 0.",
+            "Get references to #count-display, #btn-increment, #btn-decrement, #btn-reset.",
+            "Write updateDisplay() to update the span text and change color to red when count >= 10.",
+            "On increment button click, increase count by 1 and call updateDisplay().",
+            "On decrement button click, decrease count only if > 0, then call updateDisplay().",
+            "On reset button click, set count to 0 and call updateDisplay().",
+            "Ensure the console has no errors."
+        ],
+        "hints": [
+            "Start with: `let count = 0;`",
+            "Use `document.getElementById('count-display')` to get the display element.",
+            "In updateDisplay(): set `display.textContent = count;` and check `if (count >= 10) { display.style.color = 'red'; } else { display.style.color = ''; }`",
+            "For decrement: `if (count > 0) { count--; updateDisplay(); }`",
+            "For reset: `count = 0; updateDisplay();`"
+        ],
+        "rules": [
+            {
+                "type": "JS_CODE_EXCLUDES",
+                "value": "var ",
+                "stepIndex": 0,
+                "errorMessage": "Do not use 'var'. Use 'let' or 'const' instead."
+            },
+            {
+                "type": "CONSOLE_NO_ERRORS",
+                "stepIndex": 1,
+                "errorMessage": "Fix any JavaScript errors shown in the console."
+            },
+            {
+                "type": "JS_CODE_INCLUDES",
+                "value": "count",
+                "stepIndex": 2,
+                "errorMessage": "You must declare a 'count' variable in your JavaScript."
+            },
+            {
+                "type": "CLICK_AND_ASSERT",
+                "selector": "#btn-increment",
+                "targetSelector": "#count-display",
+                "value": "1",
+                "stepIndex": 3,
+                "errorMessage": "Clicking Increment should increase count to 1 and show it in #count-display."
+            },
+            {
+                "type": "INPUT_AND_ASSERT",
+                "selector": "#btn-reset",
+                "value": "",
+                "targetSelector": "#count-display",
+                "stepIndex": 4,
+                "errorMessage": "Clicking Reset should bring count back to 0 in #count-display."
+            }
+        ],
+        "solutionHtml": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Counter App</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <div class=\"counter-container\">\n      <h1>Counter</h1>\n      <span id=\"count-display\">0</span>\n      <div class=\"btn-group\">\n        <button id=\"btn-decrement\">−</button>\n        <button id=\"btn-reset\">Reset</button>\n        <button id=\"btn-increment\">+</button>\n      </div>\n    </div>\n    <script src=\"index.js\"></script>\n  </body>\n</html>",
+        "solutionCss": "body {\n  font-family: sans-serif;\n  background: #0f172a;\n  color: #f8fafc;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  margin: 0;\n}\n.counter-container {\n  background: #1e293b;\n  border-radius: 16px;\n  padding: 40px 60px;\n  text-align: center;\n  box-shadow: 0 8px 32px rgba(0,0,0,0.3);\n}\nh1 {\n  margin-top: 0;\n  letter-spacing: 2px;\n  font-size: 18px;\n  color: #94a3b8;\n  text-transform: uppercase;\n}\n#count-display {\n  display: block;\n  font-size: 72px;\n  font-weight: bold;\n  margin: 16px 0;\n  transition: color 0.3s;\n}\n.btn-group {\n  display: flex;\n  gap: 12px;\n  justify-content: center;\n  margin-top: 16px;\n}\nbutton {\n  padding: 12px 24px;\n  border: none;\n  border-radius: 8px;\n  font-size: 18px;\n  cursor: pointer;\n  background: #334155;\n  color: #f8fafc;\n  transition: background 0.2s;\n}\nbutton:hover {\n  background: #475569;\n}",
+        "solutionJs": "let count = 0;\n\nconst display = document.getElementById('count-display');\nconst btnInc = document.getElementById('btn-increment');\nconst btnDec = document.getElementById('btn-decrement');\nconst btnReset = document.getElementById('btn-reset');\n\nfunction updateDisplay() {\n  display.textContent = count;\n  if (count >= 10) {\n    display.style.color = 'red';\n  } else {\n    display.style.color = '';\n  }\n}\n\nbtnInc.addEventListener('click', () => {\n  count++;\n  updateDisplay();\n});\n\nbtnDec.addEventListener('click', () => {\n  if (count > 0) {\n    count--;\n    updateDisplay();\n  }\n});\n\nbtnReset.addEventListener('click', () => {\n  count = 0;\n  updateDisplay();\n});"
+    }
 ]
