@@ -4,6 +4,15 @@ import DEFAULT_QUESTIONS from '../constants/challenges.json';
 // Initialize PocketBase client using environment variable or fallback to local port 8090
 export const pb = new PocketBase(import.meta.env.VITE_POCKETBASE_URL || 'http://127.0.0.1:8090');
 
+// Intercept requests to bypass tunnel landing pages/browser warnings (Localtunnel & ngrok)
+pb.beforeSend = (url, options) => {
+  options.headers = Object.assign({}, options.headers, {
+    'bypass-tunnel-reminder': 'true',
+    'ngrok-skip-browser-warning': 'true'
+  });
+  return { url, options };
+};
+
 // Local storage key for offline syncing
 const LOCAL_STORAGE_KEY = 'ppa_custom_challenges';
 
