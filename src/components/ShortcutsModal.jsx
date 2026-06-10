@@ -5,15 +5,15 @@ const ShortcutsModal = ({ showShortcutsModal, setShowShortcutsModal }) => {
 
   return (
     <div className="modal-backdrop" onClick={() => setShowShortcutsModal(false)}>
-      <div className="modal-content" style={{ width: "420px", maxWidth: "90%" }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "12px" }}>
-          <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-            <Keyboard size={16} style={{ color: "var(--accent-color)" }} />Keyboard Shortcuts
+      <div className="modal-content w-[420px] max-w-[90%]" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center border-b border-border pb-3">
+          <h3 className="text-base font-bold m-0 flex items-center gap-2">
+            <Keyboard size={16} className="text-accent" />Keyboard Shortcuts
           </h3>
-          <button onClick={() => setShowShortcutsModal(false)} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}>✕</button>
+          <button onClick={() => setShowShortcutsModal(false)} className="bg-transparent border-none text-text-secondary cursor-pointer">✕</button>
         </div>
-        
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "0.75rem" }}>
+
+        <div className="flex flex-col gap-3 text-xs">
           {[
             { keys: ["Ctrl", "S"], desc: "Compile sandbox / run tests" },
             { keys: ["Alt", "Z"], desc: "Toggle editor word-wrap" },
@@ -21,18 +21,18 @@ const ShortcutsModal = ({ showShortcutsModal, setShowShortcutsModal }) => {
             { keys: ["Ctrl", "Alt", "K"], desc: "Toggle shortcuts guide" },
             { keys: ["F1"], desc: "Open Monaco command palette" }
           ].map((s, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ color: "var(--text-secondary)" }}>{s.desc}</span>
-              <div style={{ display: "flex", gap: "4px" }}>
+            <div key={i} className="flex justify-between items-center">
+              <span className="text-text-secondary">{s.desc}</span>
+              <div className="flex gap-1">
                 {s.keys.map((k, j) => (
-                  <kbd key={j} style={{ padding: "2px 6px", backgroundColor: "var(--bg-tertiary)", border: "1px solid var(--border-color)", borderRadius: "4px", fontFamily: "monospace", fontSize: "0.7rem" }}>{k}</kbd>
+                  <kbd key={j} className="px-1.5 py-0.5 bg-bg-tertiary border border-border rounded text-[0.7rem] font-mono">{k}</kbd>
                 ))}
               </div>
             </div>
           ))}
         </div>
 
-        <button onClick={() => setShowShortcutsModal(false)} className="btn-minimal active" style={{ width: "100%", justifyContent: "center", padding: "8px" }}>Close Guide</button>
+        <button onClick={() => setShowShortcutsModal(false)} className="btn-minimal active w-full justify-center py-2">Close Guide</button>
       </div>
     </div>
   );

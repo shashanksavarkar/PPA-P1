@@ -3,47 +3,47 @@ import { useState } from "react";
 const JsonInspector = ({ data, label }) => {
   const [expanded, setExpanded] = useState(false);
 
-  if (data === null) return <span style={{ color: "#808080" }}>null</span>;
-  if (data === undefined) return <span style={{ color: "#808080" }}>undefined</span>;
+  if (data === null) return <span className="text-gray-500">null</span>;
+  if (data === undefined) return <span className="text-gray-500">undefined</span>;
 
   const type = typeof data;
   if (type === "string") {
-    return <span style={{ color: "var(--neon-green)" }}>"{data}"</span>;
+    return <span className="text-neon-green">"{data}"</span>;
   }
   if (type === "number") {
-    return <span style={{ color: "#eab308" }}>{data}</span>;
+    return <span className="text-yellow-500">{data}</span>;
   }
   if (type === "boolean") {
-    return <span style={{ color: "#3b82f6" }}>{data ? "true" : "false"}</span>;
+    return <span className="text-blue-500">{data ? "true" : "false"}</span>;
   }
 
   const isArray = Array.isArray(data);
   const keys = Object.keys(data);
 
   return (
-    <div style={{ paddingLeft: "8px", display: "inline-block", fontFamily: "var(--code-font)" }}>
-      <span 
-        onClick={() => setExpanded(!expanded)} 
-        style={{ cursor: "pointer", userSelect: "none", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", gap: "4px" }}
+    <div className="pl-2 inline-block font-[family-name:var(--font-family-code)]">
+      <span
+        onClick={() => setExpanded(!expanded)}
+        className="cursor-pointer select-none text-text-secondary inline-flex items-center gap-1"
       >
-        <span style={{ fontSize: "0.6rem", width: "8px" }}>{expanded ? "▼" : "▶"}</span>
-        <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+        <span className="text-[0.6rem] w-2">{expanded ? "▼" : "▶"}</span>
+        <span className="font-semibold text-text-primary">
           {label ? `${label}: ` : ""}{isArray ? `Array(${data.length})` : "Object"}
         </span>
-        <span style={{ color: "var(--text-secondary)", opacity: 0.5 }}>
+        <span className="text-text-secondary opacity-50">
           {isArray ? "[" : "{"} {!expanded && `... ${isArray ? "]" : "}"}`}
         </span>
       </span>
 
       {expanded && (
-        <div style={{ borderLeft: "1px dashed var(--border-color)", marginLeft: "4px", paddingLeft: "8px" }}>
+        <div className="border-l border-dashed border-border ml-1 pl-2">
           {keys.map(key => (
-            <div key={key} style={{ margin: "2px 0", display: "flex", gap: "4px" }}>
-              <span style={{ color: "var(--accent-color)", flexShrink: 0 }}>{key}:</span>
+            <div key={key} className="my-0.5 flex gap-1">
+              <span className="text-accent shrink-0">{key}:</span>
               <JsonInspector data={data[key]} />
             </div>
           ))}
-          <span style={{ color: "var(--text-secondary)", opacity: 0.5, display: "block" }}>
+          <span className="text-text-secondary opacity-50 block">
             {isArray ? "]" : "}"}
           </span>
         </div>

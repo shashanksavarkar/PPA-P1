@@ -1,19 +1,7 @@
 import Editor, { DiffEditor } from "@monaco-editor/react";
 import { GitCompare, Keyboard, Sparkles, Check, Copy, RefreshCw, Maximize2, Minimize2, Settings } from "lucide-react";
 
-const actionBtnStyle = (active) => ({
-  background: "none",
-  border: "none",
-  color: active ? "var(--accent-color)" : "var(--text-secondary)",
-  cursor: "pointer",
-  padding: "4px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center"
-});
-
 const WorkspaceEditor = ({
-  isDesktop,
   webSubTab,
   setWebSubTab,
   diffView,
@@ -37,63 +25,58 @@ const WorkspaceEditor = ({
   setIsEditorFullscreen,
   setShowSettings
 }) => {
+  const actionBtnClass = (active) =>
+    `bg-transparent border-none cursor-pointer p-1 flex items-center justify-center ${active ? "text-accent" : "text-text-secondary"}`;
+
   return (
-    <div className="modern-card" style={{
-      width: "100%",
-      height: "100%",
-      flexShrink: 0,
-      display: "flex",
-      flexDirection: "row",
-      overflow: "hidden",
-      padding: 0,
-      border: "1px solid var(--border-color)",
-      backgroundColor: "var(--bg-secondary)"
-    }}>
-      <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+    <div className="modern-card !p-0 !flex-row !overflow-hidden !border !border-border !bg-bg-secondary w-full h-full shrink-0">
+      <div className="grow flex flex-col min-w-0">
         {/* Editor Tabs Bar */}
-        <div style={{ height: "36px", backgroundColor: "var(--bg-primary)", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, userSelect: "none" }}>
-          <div style={{ display: "flex", height: "100%" }}>
+        <div className="h-9 bg-bg-primary border-b border-border flex justify-between items-center shrink-0 select-none">
+          <div className="flex h-full">
             {[
               { id: "html", label: "index.html", sym: "<>", color: "#e34c26" },
               { id: "css", label: "styles.css", sym: "#", color: "#0284c7" },
               { id: "js", label: "index.js", sym: "JS", color: "#eab308" }
             ].map(tab => (
-              <div key={tab.id} onClick={() => setWebSubTab(tab.id)} style={{
-                display: "flex", alignItems: "center", gap: "6px", padding: "0 16px", height: "100%", fontSize: "0.75rem", cursor: "pointer",
-                backgroundColor: webSubTab === tab.id ? "var(--bg-secondary)" : "transparent",
-                color: webSubTab === tab.id ? "var(--text-primary)" : "var(--text-secondary)",
-                borderRight: "1px solid var(--border-color)", borderTop: webSubTab === tab.id ? "2px solid var(--accent-color)" : "none",
-                fontWeight: webSubTab === tab.id ? 600 : 400
-              }}>
-                <span style={{ color: tab.color, fontWeight: 700 }}>{tab.sym}</span>
+              <div
+                key={tab.id}
+                onClick={() => setWebSubTab(tab.id)}
+                className={`flex items-center gap-1.5 px-4 h-full text-xs cursor-pointer border-r border-border ${
+                  webSubTab === tab.id
+                    ? "bg-bg-secondary text-text-primary font-semibold border-t-2 border-t-accent"
+                    : "bg-transparent text-text-secondary font-normal border-t-0"
+                }`}
+              >
+                <span className="font-bold" style={{ color: tab.color }}>{tab.sym}</span>
                 <span>{tab.label}</span>
               </div>
             ))}
           </div>
 
-          <div style={{ display: "flex", gap: "10px", paddingRight: "12px", alignItems: "center" }}>
+          <div className="flex gap-2.5 pr-3 items-center">
             {[
               { onClick: () => setDiffView(!diffView), active: diffView, title: "Toggle Side-by-Side Diff", icon: <GitCompare size={14} /> },
               { onClick: () => setShowShortcutsModal(true), title: "Keyboard Shortcuts", icon: <Keyboard size={14} /> },
               { onClick: handleFormatCode, title: "Format Document", icon: <Sparkles size={14} /> },
-              { onClick: handleCopyCode, title: "Copy Code", icon: copied ? <Check size={14} style={{ color: "var(--neon-green)" }} /> : <Copy size={14} /> },
+              { onClick: handleCopyCode, title: "Copy Code", icon: copied ? <Check size={14} className="text-neon-green" /> : <Copy size={14} /> },
               { onClick: handleResetCode, title: "Reset to Template", icon: <RefreshCw size={14} /> }
             ].map((btn, i) => (
-              <button key={i} onClick={btn.onClick} style={actionBtnStyle(btn.active)} title={btn.title}>{btn.icon}</button>
+              <button key={i} onClick={btn.onClick} className={actionBtnClass(btn.active)} title={btn.title}>{btn.icon}</button>
             ))}
 
-            <div style={{ width: "1px", height: "18px", backgroundColor: "var(--border-color)" }} />
+            <div className="w-px h-[18px] bg-border" />
 
-            <button 
-              onClick={() => setIsEditorFullscreen?.(!isEditorFullscreen)} 
-              style={actionBtnStyle(isEditorFullscreen)} 
+            <button
+              onClick={() => setIsEditorFullscreen?.(!isEditorFullscreen)}
+              className={actionBtnClass(isEditorFullscreen)}
               title="Toggle Fullscreen Editor"
             >
               {isEditorFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </button>
-            <button 
-              onClick={() => setShowSettings?.(true)} 
-              style={actionBtnStyle(false)} 
+            <button
+              onClick={() => setShowSettings?.(true)}
+              className={actionBtnClass(false)}
               title="Editor Settings"
             >
               <Settings size={14} />
@@ -102,16 +85,16 @@ const WorkspaceEditor = ({
         </div>
 
         {/* Breadcrumb Bar */}
-        <div style={{ height: "22px", backgroundColor: "var(--bg-secondary)", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", padding: "0 16px", fontSize: "0.68rem", color: "var(--text-secondary)", gap: "8px", userSelect: "none" }}>
-          <span>src</span><span>&gt;</span><span style={{ color: "var(--text-primary)" }}>{`index.${webSubTab}`}</span>
+        <div className="h-[22px] bg-bg-secondary border-b border-border flex items-center px-4 text-[0.68rem] text-text-secondary gap-2 select-none">
+          <span>src</span><span>&gt;</span><span className="text-text-primary">{`index.${webSubTab}`}</span>
         </div>
 
         {/* Monaco Editor Container */}
-        <div className="editor-wrapper" style={{ flexGrow: 1, border: "none", borderRadius: 0 }}>
+        <div className="editor-wrapper !border-none !rounded-none grow">
           {diffView ? (
-            <DiffEditor height="100%" language={getMonacoLanguage()} original={getOriginalCode()} modified={getActiveCode()} onMount={handleDiffMount} theme="light" options={{ fontSize, fontFamily: "var(--code-font)", minimap: { enabled: false }, wordWrap, readOnly: false, automaticLayout: true, renderSideBySide: true }} />
+            <DiffEditor height="100%" language={getMonacoLanguage()} original={getOriginalCode()} modified={getActiveCode()} onMount={handleDiffMount} theme="light" options={{ fontSize, fontFamily: "var(--font-family-code)", minimap: { enabled: false }, wordWrap, readOnly: false, automaticLayout: true, renderSideBySide: true }} />
           ) : (
-            <Editor height="100%" language={getMonacoLanguage()} value={getActiveCode()} onChange={handleEditorChange} onMount={handleEditorDidMount} theme="light" options={{ fontSize, fontFamily: "var(--code-font)", minimap: { enabled: minimap }, wordWrap, lineNumbers: "on", readOnly: false, automaticLayout: true, padding: { top: 12, bottom: 12 }, tabSize, scrollBeyondLastLine: false, bracketPairColorization: { enabled: true } }} />
+            <Editor height="100%" language={getMonacoLanguage()} value={getActiveCode()} onChange={handleEditorChange} onMount={handleEditorDidMount} theme="light" options={{ fontSize, fontFamily: "var(--font-family-code)", minimap: { enabled: minimap }, wordWrap, lineNumbers: "on", readOnly: false, automaticLayout: true, padding: { top: 12, bottom: 12 }, tabSize, scrollBeyondLastLine: false, bracketPairColorization: { enabled: true } }} />
           )}
         </div>
       </div>

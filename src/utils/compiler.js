@@ -1,7 +1,7 @@
 /**
- * Build sandboxed web frame source code doc
+ * Build sandboxed web frame source code doc.
  */
-export const compileWebSandbox = (htmlCode, cssCode, webJsCode) => {
+export const compileWebSandbox = (htmlCode, cssCode, webJsCode, messageToken = "") => {
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -30,6 +30,7 @@ export const compileWebSandbox = (htmlCode, cssCode, webJsCode) => {
               
               window.parent.postMessage({
                 source: 'sandbox-web-iframe',
+                token: ${JSON.stringify(messageToken)},
                 type: type,
                 message: parts.join(' '),
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -44,6 +45,7 @@ export const compileWebSandbox = (htmlCode, cssCode, webJsCode) => {
             window.addEventListener('error', function(err) {
               window.parent.postMessage({
                 source: 'sandbox-web-iframe',
+                token: ${JSON.stringify(messageToken)},
                 type: 'error',
                 message: err.message + ' (line ' + err.lineno + ', col ' + err.colno + ')',
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })

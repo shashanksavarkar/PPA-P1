@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Timer as TimerIcon, RefreshCw, Play, Send } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useId } from "react";
 import DEFAULT_QUESTIONS from "../constants/challenges.json";
 import { compileWebSandbox } from "../utils/compiler";
 import { evaluateRules } from "../utils/ruleEvaluator";
-import { getLocal, getSession, setLocal, setSession, formatTime, resolveVal } from "../utils/storage";
+import { getLocal, setLocal, resolveVal } from "../utils/storage";
 import { runConfetti } from "../utils/confetti";
 
 import SettingsDrawer from "../components/SettingsDrawer";
@@ -11,6 +10,25 @@ import OutputPanel from "../components/OutputPanel";
 import ShortcutsModal from "../components/ShortcutsModal";
 import WorkspaceEditor from "../components/WorkspaceEditor";
 import ChallengeSidebar from "../components/ChallengeSidebar";
+import PlaygroundFooter from "../components/PlaygroundFooter";
+
+import { useResizableLayout } from "../hooks/useResizableLayout";
+import { useTimer } from "../hooks/useTimer";
+
+const CODE_STORAGE_KEYS = {
+  html: "ppa_playground_html",
+  css: "ppa_playground_css",
+  js: "ppa_playground_webjs"
+};
+
+const CONSOLE_MESSAGE_TYPES = new Set(["log", "info", "warn", "error"]);
+
+const getChallengeCodeKey = (kind, questionId) => `${CODE_STORAGE_KEYS[kind]}_${questionId}`;
+
+const getQuestionCode = (question, kind, fallback) => {
+  if (!question?.id) return getLocal(CODE_STORAGE_KEYS[kind], fallback);
+  return getLocal(getChallengeCodeKey(kind, question.id), fallback);
+};
 
 const DEFAULT_HTML = `<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8">\n    <title>PPA</title>\n    <link rel="stylesheet" href="style.css">\n  </head>\n  <body>\n    <script src="index.js"></script>\n  </body>\n</html>`;
 const DEFAULT_CSS  = `body {\n  font-family: sans-serif;\n  margin: 20px;\n  background-color: #0f172a;\n  color: #f8fafc;\n}`;
@@ -20,20 +38,29 @@ const PlaygroundPage = () => {
   const handleRunCodeRef = useRef(null);
   const editorRef        = useRef(null);
   const diffEditorRef    = useRef(null);
-  const containerRef     = useRef(null);
-  const rightColumnRef   = useRef(null);
   const canvasRef        = useRef(null);
+  const sandboxToken     = useId();
 
-  // Layout
-  const [layout, setLayout] = useState({
-    col1Width:  getLocal("ppa_col1_width", 30),
-    col2Width:  getLocal("ppa_col2_width", 45),
-    col3Height: getLocal("ppa_col3_height", 55),
-    dragging:   "none",
-    isDesktop:  window.innerWidth > 1024
-  });
-  const { col1Width, col2Width, col3Height, dragging, isDesktop } = layout;
-  const [sidebarCollapsed,   setSidebarCollapsed]   = useState(false);
+  // Custom Hooks for Layout Resizing and Timer
+  const {
+    containerRef,
+    rightColumnRef,
+    col1Width,
+    col2Width,
+    col3Height,
+    dragging,
+    isDesktop,
+    sidebarCollapsed,
+    setSidebarCollapsed,
+    startDragging
+  } = useResizableLayout();
+
+  const {
+    timeSpent,
+    timerRunning,
+    setTimerRunning
+  } = useTimer();
+
   const [isEditorFullscreen, setIsEditorFullscreen] = useState(false);
 
   // Editor prefs
@@ -68,49 +95,40 @@ const PlaygroundPage = () => {
     catch { return false; }
   });
 
-  const [timeSpent,    setTimeSpent]    = useState(() => getSession("ppa_practice_time_spent", 0));
-  const [timerRunning, setTimerRunning] = useState(false);
   const [attemptsCount, setAttemptsCount] = useState(0);
 
-  const [htmlCode, setHtmlCode] = useState(() => getLocal("ppa_playground_html", DEFAULT_HTML));
-  const [cssCode,  setCssCode]  = useState(() => getLocal("ppa_playground_css",  DEFAULT_CSS));
+  const [htmlCode, setHtmlCode]   = useState(() => getLocal("ppa_playground_html", DEFAULT_HTML));
+  const [cssCode,  setCssCode]    = useState(() => getLocal("ppa_playground_css",  DEFAULT_CSS));
   const [webJsCode, setWebJsCode] = useState(() => getLocal("ppa_playground_webjs", DEFAULT_JS));
+  const initialCodeRef = useRef({ html: htmlCode, css: cssCode, js: webJsCode });
 
-  const [webSubTab,    setWebSubTab]    = useState("html");
-  const [srcDoc,       setSrcDoc]       = useState("");
-  const [consoleLogs,  setConsoleLogs]  = useState([]);
-  const [toasts,       setToasts]       = useState([]);
+  const [webSubTab,   setWebSubTab]   = useState("html");
+  const [srcDoc,      setSrcDoc]      = useState("");
+  const [consoleLogs, setConsoleLogs] = useState([]);
+  const [toasts,      setToasts]      = useState([]);
 
   const activeQuestion = questions[activeIndex] ?? null;
 
   const showToast = (message, type = "success") => {
     setToasts(prev => {
-      if (prev.some(t => t.message === message)) return prev; // deduplicate
+      if (prev.some(t => t.message === message)) return prev;
       const id = Date.now();
-      const next = [...prev, { id, message, type }].slice(-3); // max 3
+      const next = [...prev, { id, message, type }].slice(-3);
       setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3000);
       return next;
     });
   };
 
-  const updatePref = (key, valOrFn) => setPrefs(p => ({ ...p, [key]: resolveVal(valOrFn, p[key]) }));
-  const updateUi = (key, valOrFn) => setUi(p => ({ ...p, [key]: resolveVal(valOrFn, p[key]) }));
+  const updatePref      = (key, valOrFn) => setPrefs(p => ({ ...p, [key]: resolveVal(valOrFn, p[key]) }));
+  const updateUi        = (key, valOrFn) => setUi(p => ({ ...p, [key]: resolveVal(valOrFn, p[key]) }));
   const updateChallenge = (key, valOrFn) => setChallenge(p => ({ ...p, [key]: resolveVal(valOrFn, p[key]) }));
 
+  const persistCurrentCode = useCallback((kind, value, questionId = activeQuestion?.id) => {
+    setLocal(CODE_STORAGE_KEYS[kind], value);
+    if (questionId) setLocal(getChallengeCodeKey(kind, questionId), value);
+  }, [activeQuestion?.id]);
 
   // ── Effects ───────────────────────────────────────────────
-  useEffect(() => {
-    const onResize = () => setLayout(p => ({ ...p, isDesktop: window.innerWidth > 1024 }));
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  useEffect(() => {
-    if (!timerRunning) return;
-    const id = setInterval(() => setTimeSpent(prev => { const n = prev + 1; setSession("ppa_practice_time_spent", n); return n; }), 1000);
-    return () => clearInterval(id);
-  }, [timerRunning]);
-
   useEffect(() => {
     document.documentElement.style.fontSize = `${uiFontSize}px`;
     setLocal("ppa_setting_ui_fontsize", uiFontSize);
@@ -121,7 +139,11 @@ const PlaygroundPage = () => {
   useEffect(() => {
     const onStorage = (e) => {
       if (e.key === "ppa_custom_challenges") {
-        try { setChallenge(p => ({ ...p, questions: JSON.parse(e.newValue) })); } catch {}
+        try {
+          setChallenge(p => ({ ...p, questions: JSON.parse(e.newValue) }));
+        } catch {
+          setChallenge(p => ({ ...p, questions: DEFAULT_QUESTIONS }));
+        }
       }
     };
     window.addEventListener("storage", onStorage);
@@ -130,12 +152,24 @@ const PlaygroundPage = () => {
 
   useEffect(() => {
     const onMsg = (e) => {
-      if (e.data?.source === "sandbox-web-iframe")
-        setConsoleLogs(prev => { const n = [...prev, e.data]; return n.length > 80 ? n.slice(1) : n; });
+      const iframeWindow = document.querySelector(".preview-iframe")?.contentWindow;
+      const data = e.data;
+      if (
+        e.source === iframeWindow &&
+        data?.source === "sandbox-web-iframe" &&
+        data?.token === sandboxToken &&
+        CONSOLE_MESSAGE_TYPES.has(data.type) &&
+        typeof data.message === "string"
+      ) {
+        setConsoleLogs(prev => {
+          const n = [...prev, { type: data.type, message: data.message, time: String(data.time || "") }];
+          return n.length > 80 ? n.slice(1) : n;
+        });
+      }
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
-  }, []);
+  }, [sandboxToken]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -150,41 +184,19 @@ const PlaygroundPage = () => {
 
   // Live validation
   useEffect(() => {
-    if (!activeQuestion) { setChallenge(p => ({ ...p, validationResult: null })); return; }
+    if (!activeQuestion) {
+      queueMicrotask(() => {
+        setChallenge(p => p.validationResult ? ({ ...p, validationResult: null }) : p);
+      });
+      return;
+    }
     const id = setTimeout(() => {
-      const iframe   = document.querySelector(".preview-iframe");
+      const iframe    = document.querySelector(".preview-iframe");
       const iframeDoc = iframe?.contentDocument || iframe?.contentWindow?.document;
       setChallenge(p => ({ ...p, validationResult: evaluateRules(htmlCode, cssCode, webJsCode, consoleLogs, activeQuestion, iframeDoc) }));
     }, 350);
     return () => clearTimeout(id);
   }, [htmlCode, cssCode, webJsCode, consoleLogs, activeQuestion, srcDoc]);
-
-  // Drag resize
-  useEffect(() => {
-    if (dragging === "none") return;
-    const onMove = (e) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      if (dragging === "col1") {
-        const val = ((e.clientX - rect.left) / rect.width) * 100;
-        if (val >= 15 && val <= 50) { setLayout(p => ({ ...p, col1Width: val })); setLocal("ppa_col1_width", val); }
-      } else if (dragging === "col2") {
-        const col2Val = ((e.clientX - rect.left) / rect.width) * 100 - (sidebarCollapsed ? 0 : col1Width);
-        const totalVal = col2Val + (sidebarCollapsed ? 0 : col1Width);
-        if (col2Val >= 20 && totalVal <= 85) { setLayout(p => ({ ...p, col2Width: col2Val })); setLocal("ppa_col2_width", col2Val); }
-      } else if (dragging === "col3" && rightColumnRef.current) {
-        const rRect = rightColumnRef.current.getBoundingClientRect();
-        const val = ((e.clientY - rRect.top) / rRect.height) * 100;
-        if (val >= 15 && val <= 85) { setLayout(p => ({ ...p, col3Height: val })); setLocal("ppa_col3_height", val); }
-      }
-    };
-    const onUp = () => { setLayout(p => ({ ...p, dragging: "none" })); document.body.style.cursor = ""; document.body.style.userSelect = ""; };
-    document.body.style.cursor     = (dragging === "col1" || dragging === "col2") ? "col-resize" : "row-resize";
-    document.body.style.userSelect = "none";
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup",   onUp);
-    return () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
-  }, [dragging, col1Width, sidebarCollapsed]);
 
   // Confetti
   useEffect(() => {
@@ -195,57 +207,71 @@ const PlaygroundPage = () => {
   }, [celebrated]);
 
   useEffect(() => {
-    if (validationResult?.success && !celebrated) {
-      setUi(p => ({ ...p, celebrated: true }));
-      showToast("🎉 Challenge Completed!", "success");
-      if (activeQuestion) setChallenge(p => {
-        const next = new Set(p.completedIds).add(activeQuestion.id);
-        setLocal("ppa_completed_ids", Array.from(next));
-        return { ...p, completedIds: next };
+    if (validationResult?.success && activeQuestion && !completedIds.has(activeQuestion.id) && !celebrated) {
+      queueMicrotask(() => {
+        setUi(p => ({ ...p, celebrated: true }));
+        showToast("🎉 Challenge Completed!", "success");
+        setChallenge(p => {
+          const next = new Set(p.completedIds).add(activeQuestion.id);
+          setLocal("ppa_completed_ids", Array.from(next));
+          return { ...p, completedIds: next };
+        });
       });
     }
-  }, [validationResult, celebrated, activeQuestion]);
+  }, [validationResult, completedIds, celebrated, activeQuestion]);
 
   // ── Actions ───────────────────────────────────────────────
   const handleRunCode = useCallback(() => {
     setConsoleLogs([]);
     setUi(p => ({ ...p, compiling: true }));
-    setTimeout(() => { setSrcDoc(compileWebSandbox(htmlCode, cssCode, webJsCode)); setUi(p => ({ ...p, compiling: false })); showToast("Built successfully!", "success"); }, 450);
-  }, [htmlCode, cssCode, webJsCode]);
+    setTimeout(() => { 
+      setSrcDoc(compileWebSandbox(htmlCode, cssCode, webJsCode, sandboxToken)); 
+      setUi(p => ({ ...p, compiling: false })); 
+      showToast("Built successfully!", "success"); 
+    }, 450);
+  }, [htmlCode, cssCode, webJsCode, sandboxToken]);
 
   useEffect(() => { handleRunCodeRef.current = handleRunCode; }, [handleRunCode]);
 
-  const loadQuestion = (idx) => {
+  const loadQuestion = useCallback((idx) => {
     if (idx < 0 || idx >= questions.length) return;
     const q = questions[idx];
-    const h = q.initialHtml || DEFAULT_HTML, c = q.initialCss || DEFAULT_CSS, j = q.initialJs || DEFAULT_JS;
+    const h = getQuestionCode(q, "html", q.initialHtml || DEFAULT_HTML);
+    const c = getQuestionCode(q, "css",  q.initialCss  || DEFAULT_CSS);
+    const j = getQuestionCode(q, "js",   q.initialJs   || DEFAULT_JS);
     setHtmlCode(h); setCssCode(c); setWebJsCode(j);
     setLocal("ppa_playground_html", h); setLocal("ppa_playground_css", c); setLocal("ppa_playground_webjs", j);
-    setChallenge(p => ({ ...p, activeIndex: idx, visibleHints: {}, validationResult: null, showExpected: false, expectedSrcDoc: compileWebSandbox(q.solutionHtml || h, q.solutionCss || c, q.solutionJs || j) }));
+    setChallenge(p => ({ ...p, activeIndex: idx, visibleHints: {}, validationResult: null, showExpected: false, expectedSrcDoc: compileWebSandbox(q.solutionHtml || h, q.solutionCss || c, q.solutionJs || j, sandboxToken) }));
     setUi(p => ({ ...p, celebrated: false }));
-  };
+  }, [questions, sandboxToken]);
 
-  useEffect(() => { loadQuestion(0); setSrcDoc(compileWebSandbox(htmlCode, cssCode, webJsCode)); }, []);
+  useEffect(() => {
+    queueMicrotask(() => {
+      loadQuestion(0);
+      setSrcDoc(compileWebSandbox(initialCodeRef.current.html, initialCodeRef.current.css, initialCodeRef.current.js, sandboxToken));
+    });
+  }, [loadQuestion, sandboxToken]);
 
   const handleEditorChange = (value = "") => {
-    const suffix = activeQuestion ? `_${activeQuestion.id}` : "";
-    if (webSubTab === "html") { setHtmlCode(value); setLocal(`ppa_playground_html${suffix}`, value); }
-    else if (webSubTab === "css") { setCssCode(value); setLocal(`ppa_playground_css${suffix}`, value); }
-    else { setWebJsCode(value); setLocal(`ppa_playground_webjs${suffix}`, value); }
+    if (webSubTab === "html") { setHtmlCode(value); persistCurrentCode("html", value); }
+    else if (webSubTab === "css") { setCssCode(value); persistCurrentCode("css", value); }
+    else { setWebJsCode(value); persistCurrentCode("js", value); }
   };
 
   const handleStepClick = (idx) => {
     if (!activeQuestion) return;
     const desc = activeQuestion.changesToBeDone[idx]?.toLowerCase() || "";
-    let tab = "html", term = "";
+    let term = "";
     if (desc.includes("style") || desc.includes("css") || desc.includes("color") || desc.includes("background")) {
-      tab = "css"; term = desc.includes("title") ? "#title" : desc.includes("stats") ? ".stats-grid" : desc.includes("card") ? ".stat-card" : "button";
+      term = desc.includes("title") ? "#title" : desc.includes("stats") ? ".stats-grid" : desc.includes("card") ? ".stat-card" : "button";
+      setWebSubTab("css");
     } else if (idx <= 3) {
-      tab = "html"; term = desc.includes("stats") ? "stats-grid" : desc.includes("card") ? "stat-card" : "id=\"title\"";
+      term = desc.includes("stats") ? "stats-grid" : desc.includes("card") ? "stat-card" : "id=\"title\"";
+      setWebSubTab("html");
     } else {
-      tab = "js"; term = desc.includes("click") ? "addEventListener" : "items";
+      term = desc.includes("click") ? "addEventListener" : "items";
+      setWebSubTab("js");
     }
-    setWebSubTab(tab);
     if (editorRef.current && term) {
       setTimeout(() => {
         const model = editorRef.current.getModel();
@@ -275,7 +301,9 @@ const PlaygroundPage = () => {
     if (!window.confirm("Reset editor to boilerplate?")) return;
     const h = activeQuestion?.initialHtml || DEFAULT_HTML, c = activeQuestion?.initialCss || DEFAULT_CSS, j = activeQuestion?.initialJs || DEFAULT_JS;
     setHtmlCode(h); setCssCode(c); setWebJsCode(j);
-    setLocal("ppa_playground_html", h); setLocal("ppa_playground_css", c); setLocal("ppa_playground_webjs", j);
+    persistCurrentCode("html", h);
+    persistCurrentCode("css", c);
+    persistCurrentCode("js", j);
     showToast("Code reset", "info");
   };
   const handleCopyCode = () => {
@@ -292,7 +320,7 @@ const PlaygroundPage = () => {
       const iframeDoc = document.querySelector(".preview-iframe")?.contentDocument;
       const res = evaluateRules(htmlCode, cssCode, webJsCode, consoleLogs, activeQuestion, iframeDoc);
       showToast(res?.success ? "🎉 Challenge complete!" : "❌ Some tasks still failing. Keep going!", res?.success ? "success" : "error");
-      if (res?.success) setUi(p => ({ ...p, celebrated: true }));
+      if (res?.success && activeQuestion && !completedIds.has(activeQuestion.id)) setUi(p => ({ ...p, celebrated: true }));
     }, 550);
   };
 
@@ -300,7 +328,7 @@ const PlaygroundPage = () => {
 
   // ── Render ────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex flex-col h-screen bg-bg-primary">
       {showSettings && (
         <SettingsDrawer
           wordWrap={wordWrap}       setWordWrap={w => updatePref("wordWrap", w)}
@@ -350,7 +378,7 @@ const PlaygroundPage = () => {
         {isDesktop && !sidebarCollapsed && !isEditorFullscreen && (
           <div
             className={`resize-divider ${dragging === "col1" ? "dragging" : ""}`}
-            onMouseDown={e => { e.preventDefault(); setLayout(p => ({ ...p, dragging: "col1" })); }}
+            onMouseDown={e => { e.preventDefault(); startDragging("col1"); }}
             style={{ position: "relative" }}
           >
             <div
@@ -367,7 +395,6 @@ const PlaygroundPage = () => {
         {/* Column 2: Code Editor */}
         <div style={{ width: isDesktop ? (isEditorFullscreen ? "100%" : `${displayCol2Width}%`) : "100%", height: "100%", display: "flex", flexDirection: "column", flexShrink: 0 }}>
           <WorkspaceEditor
-            isDesktop={isDesktop}
             webSubTab={webSubTab}         setWebSubTab={setWebSubTab}
             diffView={diffView}           setDiffView={d => updateUi("diff", d)}
             setShowShortcutsModal={s => updateUi("shortcuts", s)}
@@ -388,12 +415,12 @@ const PlaygroundPage = () => {
 
         {/* Divider 2 */}
         {isDesktop && !isEditorFullscreen && (
-          <div className={`resize-divider ${dragging === "col2" ? "dragging" : ""}`} onMouseDown={e => { e.preventDefault(); setLayout(p => ({ ...p, dragging: "col2" })); }} />
+          <div className={`resize-divider ${dragging === "col2" ? "dragging" : ""}`} onMouseDown={e => { e.preventDefault(); startDragging("col2"); }} />
         )}
 
         {/* Column 3: Output */}
         {!isEditorFullscreen && (
-          <div ref={rightColumnRef} style={{ display: "flex", flexDirection: "column", flexGrow: 1, height: "100%", minWidth: 0, overflow: "hidden" }}>
+          <div ref={rightColumnRef} className="flex flex-col grow h-full min-w-0 overflow-hidden">
             <OutputPanel
               srcDoc={srcDoc}
               consoleLogs={consoleLogs}     setConsoleLogs={setConsoleLogs}
@@ -405,28 +432,22 @@ const PlaygroundPage = () => {
               hasActiveChallenge={!!activeQuestion}
               hideExpectedOption={!isAuthorMode}
               col3Height={col3Height}
-              onDragStart={e => { e.preventDefault(); setLayout(p => ({ ...p, dragging: "col3" })); }}
+              onDragStart={e => { e.preventDefault(); startDragging("col3"); }}
             />
           </div>
         )}
       </main>
 
-      {/* Footer */}
-      <footer style={{ height: "50px", backgroundColor: "#111827", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", fontFamily: "var(--ui-font)", color: "#ffffff", flexShrink: 0, userSelect: "none", zIndex: 100 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button onClick={() => setTimerRunning(!timerRunning)} style={{ height: "32px", padding: "0 14px", borderRadius: "6px", backgroundColor: "#1f2937", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#ffffff", fontSize: "0.78rem", fontWeight: 600 }} title={timerRunning ? "Pause timer" : "Start timer"}>
-            <TimerIcon size={14} style={{ color: timerRunning ? "#10b981" : "#9ca3af" }} />
-            <span style={{ color: timerRunning ? "#10b981" : "#ffffff", fontFamily: timerRunning ? "monospace" : "var(--ui-font)" }}>{timerRunning ? formatTime(timeSpent) : "Start Timer"}</span>
-          </button>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <button onClick={handleResetCode} style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#dc2626", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#ffffff" }} title="Reset code"><RefreshCw size={14} /></button>
-          <div style={{ height: "32px", padding: "0 12px", borderRadius: "6px", backgroundColor: "#1f2937", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", color: "#d1d5db", fontSize: "0.75rem", fontWeight: 600 }}>Attempts: {attemptsCount}</div>
-          <button onClick={handleRunCode} style={{ height: "32px", padding: "0 16px", borderRadius: "6px", backgroundColor: "#ea580c", border: "none", color: "#ffffff", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }} title="Run (Ctrl+S)"><Play size={12} fill="#ffffff" /><span>Run</span></button>
-          <button onClick={handleSubmitPractice} style={{ height: "32px", padding: "0 16px", borderRadius: "6px", backgroundColor: "#2563eb", border: "none", color: "#ffffff", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }} title="Submit"><Send size={12} style={{ transform: "rotate(-45deg)" }} /><span>Submit</span></button>
-        </div>
-      </footer>
+      {/* Footer Component */}
+      <PlaygroundFooter 
+        timerRunning={timerRunning}
+        setTimerRunning={setTimerRunning}
+        timeSpent={timeSpent}
+        attemptsCount={attemptsCount}
+        onResetCode={handleResetCode}
+        onRunCode={handleRunCode}
+        onSubmitPractice={handleSubmitPractice}
+      />
 
       {/* Toasts */}
       <div className="toast-container">
@@ -434,7 +455,7 @@ const PlaygroundPage = () => {
       </div>
 
       {/* Confetti canvas */}
-      {celebrated && <canvas ref={canvasRef} style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 999999 }} />}
+      {celebrated && <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-[999999]" />}
 
       {showShortcutsModal && <ShortcutsModal showShortcutsModal={showShortcutsModal} setShowShortcutsModal={s => setUi(p => ({ ...p, shortcuts: s }))} />}
     </div>

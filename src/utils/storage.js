@@ -6,8 +6,23 @@ const parse = (val) => {
 
 export const getLocal  = (key, fallback) => { try { const v = localStorage.getItem(key);   return v !== null ? (parse(v) ?? fallback) : fallback; } catch { return fallback; } };
 export const getSession = (key, fallback) => { try { const v = sessionStorage.getItem(key); return v !== null ? (parse(v) ?? fallback) : fallback; } catch { return fallback; } };
-export const setLocal  = (key, val) => { try { localStorage.setItem(key,   typeof val === "object" ? JSON.stringify(val) : String(val)); } catch {} };
-export const setSession = (key, val) => { try { sessionStorage.setItem(key, typeof val === "object" ? JSON.stringify(val) : String(val)); } catch {} };
+export const setLocal  = (key, val) => {
+  try {
+    localStorage.setItem(key, typeof val === "object" ? JSON.stringify(val) : String(val));
+  } catch {
+    return false;
+  }
+  return true;
+};
+
+export const setSession = (key, val) => {
+  try {
+    sessionStorage.setItem(key, typeof val === "object" ? JSON.stringify(val) : String(val));
+  } catch {
+    return false;
+  }
+  return true;
+};
 
 export const formatTime = (s) => {
   const pad = (n) => String(n).padStart(2, "0");
@@ -15,4 +30,3 @@ export const formatTime = (s) => {
 };
 
 export const resolveVal = (valOrFn, currentVal) => typeof valOrFn === "function" ? valOrFn(currentVal) : valOrFn;
-

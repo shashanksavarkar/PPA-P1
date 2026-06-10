@@ -4,7 +4,6 @@ import CreatorWorkspace from "../components/CreatorWorkspace";
 import DEFAULT_QUESTIONS from "../constants/challenges.json";
 
 const CreatorPage = () => {
-  // Questions database loaded from localStorage or challenges.json
   const [questions, setQuestions] = useState(() => {
     try {
       const saved = localStorage.getItem("ppa_custom_challenges");
@@ -32,39 +31,44 @@ const CreatorPage = () => {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex flex-col h-screen bg-bg-primary">
       {/* Creator Specific Header */}
-      <header className="modern-header creator-glass-header" style={{ marginBottom: "20px", padding: "0 24px", flexShrink: 0, height: "70px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div className="header-title-container" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ padding: "10px", background: "linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(99, 102, 241, 0.15))", borderRadius: "10px", display: "flex", border: "1px solid rgba(79, 70, 229, 0.25)", boxShadow: "0 2px 8px rgba(79, 70, 229, 0.1)" }}>
-            <Sparkles size={20} style={{ color: "var(--accent-color)" }} />
+      <header className="modern-header creator-glass-header mb-5 px-6 shrink-0 h-[70px] flex items-center justify-between">
+        <div className="header-title-container flex items-center gap-3">
+          <div className="p-2.5 rounded-[10px] flex border" style={{
+            background: "linear-gradient(135deg, rgba(79,70,229,0.15), rgba(99,102,241,0.15))",
+            borderColor: "rgba(79,70,229,0.25)",
+            boxShadow: "0 2px 8px rgba(79,70,229,0.1)"
+          }}>
+            <Sparkles size={20} className="text-accent" />
           </div>
           <div>
-            <h1 className="font-ui" style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0, letterSpacing: "-0.01em", background: "linear-gradient(135deg, var(--text-primary), var(--accent-color))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              ASSESSMENT CREATOR & QUESTION MANAGER
+            <h1 className="font-[family-name:var(--font-family-ui)] text-[1.15rem] font-extrabold m-0 tracking-tight"
+              style={{ background: "linear-gradient(135deg, var(--color-text-primary), var(--color-accent))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              ASSESSMENT CREATOR &amp; QUESTION MANAGER
             </h1>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px", fontWeight: 500 }}>
+            <p className="text-[0.75rem] text-text-secondary mt-0.5 font-medium">
               Build custom challenges, import text outlines, or manage questions in fullscreen
             </p>
           </div>
         </div>
-        
-        <button 
-          className="btn-minimal"
+
+        <button
+          className="btn-minimal font-bold rounded-lg px-4 py-2 cursor-pointer"
+          style={{ color: "var(--color-accent)", borderColor: "var(--color-accent)" }}
           onClick={() => {
             const url = new URL(window.location.href);
             url.searchParams.delete("mode");
             window.location.href = url.pathname + url.search;
           }}
           title="Return to Playground"
-          style={{ fontWeight: 700, color: "var(--accent-color)", borderColor: "var(--accent-color)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", transition: "all 0.2s ease" }}
         >
-          <span>Exit Creator & Back to Playground</span>
+          <span>Exit Creator &amp; Back to Playground</span>
         </button>
       </header>
-      
+
       {/* Spacious Creator Panel Workspace */}
-      <CreatorWorkspace 
+      <CreatorWorkspace
         questions={questions}
         setQuestions={setQuestions}
         showToast={showToast}
@@ -73,41 +77,13 @@ const CreatorPage = () => {
         loadQuestion={null}
       />
 
-      {/* Floating Toast Notifications Container */}
-      <div style={{
-        position: "fixed",
-        bottom: "35px",
-        right: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-        zIndex: 99999,
-        pointerEvents: "none"
-      }}>
-        {toasts.map(toast => {
-          let bgColor = "rgba(59, 130, 246, 0.95)"; // info
-          if (toast.type === "success") bgColor = "rgba(16, 185, 129, 0.95)";
-          if (toast.type === "error") bgColor = "rgba(239, 68, 68, 0.95)";
-          
-          return (
-            <div key={toast.id} style={{
-              padding: "10px 16px",
-              borderRadius: "6px",
-              backgroundColor: bgColor,
-              color: "#ffffff",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              pointerEvents: "auto",
-              animation: "slideIn 0.2s ease"
-            }}>
-              <span>{toast.message}</span>
-            </div>
-          );
-        })}
+      {/* Floating Toast Notifications */}
+      <div className="toast-container">
+        {toasts.map(toast => (
+          <div key={toast.id} className={`toast-item toast-${toast.type || "info"}`}>
+            <span>{toast.message}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,33 +1,36 @@
 import { X, Sliders, Type, Play } from "lucide-react";
 
 const SizeStepper = ({ value, onDecrease, onIncrease }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-    <button onClick={onDecrease} className="btn-minimal" style={{ padding: "2px 6px", fontSize: "0.7rem" }}>-</button>
-    <span style={{ fontSize: "0.75rem", fontFamily: "var(--code-font)" }}>{value}px</span>
-    <button onClick={onIncrease} className="btn-minimal" style={{ padding: "2px 6px", fontSize: "0.7rem" }}>+</button>
+  <div className="flex items-center gap-1.5">
+    <button onClick={onDecrease} className="btn-minimal px-1.5 py-0.5 text-[0.7rem]">-</button>
+    <span className="text-xs font-[family-name:var(--font-family-code)]">{value}px</span>
+    <button onClick={onIncrease} className="btn-minimal px-1.5 py-0.5 text-[0.7rem]">+</button>
   </div>
 );
 
 const ToggleRow = ({ label, icon, active, onToggle }) => (
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+  <div className="flex justify-between items-center">
+    <span className="text-[0.8rem] text-text-secondary inline-flex items-center gap-1">
       {icon}
       {label}
     </span>
-    <button 
+    <button
       onClick={onToggle}
-      className="btn-minimal"
-      style={{ padding: "4px 8px", fontSize: "0.7rem", color: active ? "var(--accent-color)" : "var(--text-primary)", borderColor: active ? "var(--accent-color)" : "var(--border-color)" }}
+      className="btn-minimal px-2 py-1 text-[0.7rem]"
+      style={{
+        color: active ? "var(--color-accent)" : "var(--color-text-primary)",
+        borderColor: active ? "var(--color-accent)" : "var(--color-border)"
+      }}
     >
       {active ? "ON" : "OFF"}
     </button>
   </div>
 );
 
-const SettingsDrawer = ({ 
-  wordWrap, 
-  setWordWrap, 
-  fontSize, 
+const SettingsDrawer = ({
+  wordWrap,
+  setWordWrap,
+  fontSize,
   setFontSize,
   minimap,
   setMinimap,
@@ -40,28 +43,28 @@ const SettingsDrawer = ({
   onClose
 }) => {
   return (
-    <div style={{ position: "absolute", top: "65px", right: "20px", backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", borderRadius: "12px", padding: "20px", zIndex: 200, width: "300px", boxShadow: "0 10px 30px rgba(0,0,0,0.08)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid var(--border-color)", paddingBottom: "8px" }}>
-        <h3 className="font-ui" style={{ fontSize: "0.9rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
-          <Sliders size={14} style={{ color: "var(--accent-color)" }} />
-          Preferences & Options
+    <div className="absolute top-[65px] right-5 bg-bg-secondary border border-border rounded-xl p-5 z-200 w-[300px] shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+      <div className="flex justify-between items-center mb-4 border-b border-border pb-2">
+        <h3 className="font-[family-name:var(--font-family-ui)] text-[0.9rem] font-semibold flex items-center gap-1.5">
+          <Sliders size={14} className="text-accent" />
+          Preferences &amp; Options
         </h3>
-        <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", display: "flex", alignItems: "center" }}>
+        <button onClick={onClose} className="bg-transparent border-none text-text-secondary cursor-pointer flex items-center">
           <X size={14} />
         </button>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <span className="text-[0.8rem] text-text-secondary inline-flex items-center gap-1">
             <Type size={12} />
             UI Text Size
           </span>
           <SizeStepper value={uiFontSize} onDecrease={() => setUiFontSize(prev => Math.max(12, prev - 1))} onIncrease={() => setUiFontSize(prev => Math.min(20, prev + 1))} />
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+        <div className="flex justify-between items-center">
+          <span className="text-[0.8rem] text-text-secondary inline-flex items-center gap-1">
             <Type size={12} />
             Editor Code Size
           </span>
@@ -70,14 +73,14 @@ const SettingsDrawer = ({
 
         <ToggleRow label="Auto Compile" icon={<Play size={12} />} active={autoCompile} onToggle={() => setAutoCompile(!autoCompile)} />
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+        <div className="flex justify-between items-center">
+          <span className="text-[0.8rem] text-text-secondary inline-flex items-center gap-1">
             <Sliders size={12} />
             Tab Indentation
           </span>
-          <div style={{ display: "flex", gap: "4px" }}>
+          <div className="flex gap-1">
             {[2, 4].map(sz => (
-              <button key={sz} onClick={() => setTabSize(sz)} className={`btn-minimal ${tabSize === sz ? "active" : ""}`} style={{ padding: "3px 8px", fontSize: "0.7rem" }}>
+              <button key={sz} onClick={() => setTabSize(sz)} className={`btn-minimal px-2 py-[3px] text-[0.7rem] ${tabSize === sz ? "active" : ""}`}>
                 {sz}
               </button>
             ))}
