@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { FileText, Code2, CheckCircle2, Zap } from "lucide-react";
 import Editor from "@monaco-editor/react";
 
 const CodeTemplatesWorkspace = ({
@@ -28,22 +28,22 @@ const CodeTemplatesWorkspace = ({
   };
 
   return (
-    <div className="creator-glass-card p-5 flex flex-col gap-4">
-      <div className="flex justify-between items-center border-b border-border pb-3">
+    <div className="creator-glass-card p-6 flex flex-col gap-5">
+      <div className="flex justify-between items-center border-b border-border pb-3.5 shrink-0">
         <div className="flex items-center gap-2">
-          <FileText size={16} className="text-accent" />
-          <span className="text-[0.85rem] font-bold text-text-primary">Code Workspace Templates</span>
+          <Code2 size={16} className="text-accent" />
+          <span className="text-[0.85rem] font-bold text-text-primary">Starter & Solution Templates</span>
         </div>
-        <div className="flex gap-1 bg-bg-tertiary p-0.5 rounded-md">
+        <div className="flex gap-1 bg-bg-tertiary p-1 rounded-xl border border-border">
           {["html", "css", "js"].map(tab => (
             <button 
               key={tab} 
               type="button"
               onClick={() => setCreatorCodeTab(tab)} 
-              className={`px-3 py-1 text-[0.7rem] font-bold border-none rounded cursor-pointer transition-all duration-150 ${
+              className={`px-3.5 py-1.5 text-[0.72rem] font-bold border-none rounded-lg cursor-pointer transition-all duration-150 ${
                 creatorCodeTab === tab 
-                  ? "text-text-primary bg-bg-secondary shadow-[0_1px_4px_rgba(0,0,0,0.05)]" 
-                  : "text-text-secondary bg-transparent"
+                  ? "text-text-primary bg-white shadow-[0_2px_6px_rgba(0,0,0,0.05)]" 
+                  : "text-text-secondary bg-transparent hover:text-text-primary"
               }`}
             >
               {tab.toUpperCase()}
@@ -52,47 +52,70 @@ const CodeTemplatesWorkspace = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 h-[300px]">
-        <div className="flex flex-col gap-1.5 h-full">
-          <span className="text-[0.68rem] font-bold text-text-secondary tracking-wide">
-            INITIAL BOILERPLATE TEMPLATE
+      <div className="grid grid-cols-2 gap-5 h-[340px] shrink-0">
+        {/* Boilerplate Editor */}
+        <div className="flex flex-col gap-2 h-full min-w-0">
+          <span className="text-[0.65rem] font-extrabold text-text-secondary tracking-wider uppercase flex items-center gap-1.5">
+            <FileText size={12} />
+            <span>INITIAL BOILERPLATE TEMPLATE</span>
           </span>
-          <div className="grow border border-border rounded-lg overflow-hidden">
+          <div className="grow border border-border rounded-xl overflow-hidden shadow-sm bg-white">
             <Editor 
               height="100%" 
               language={getLanguage()} 
               value={initialCodeValue} 
               onChange={handleInitialChange} 
-              options={{ fontSize: 12, minimap: { enabled: false }, tabSize }} 
+              theme="vs"
+              options={{ 
+                fontSize: 12, 
+                minimap: { enabled: false }, 
+                tabSize,
+                fontFamily: "var(--font-family-code)",
+                lineNumbersMinChars: 3,
+                padding: { top: 8, bottom: 8 }
+              }} 
             />
           </div>
         </div>
-        <div className="flex flex-col gap-1.5 h-full">
-          <span className="text-[0.68rem] font-bold text-accent tracking-wide">
-            COMPLETED SOLUTION CODE
+
+        {/* Solution Editor */}
+        <div className="flex flex-col gap-2 h-full min-w-0">
+          <span className="text-[0.65rem] font-extrabold text-accent tracking-wider uppercase flex items-center gap-1.5">
+            <CheckCircle2 size={12} />
+            <span>COMPLETED SOLUTION CODE</span>
           </span>
-          <div className="grow border border-border rounded-lg overflow-hidden">
+          <div className="grow border border-border rounded-xl overflow-hidden shadow-sm bg-white">
             <Editor 
               height="100%" 
               language={getLanguage()} 
               value={solutionCodeValue} 
               onChange={handleSolutionChange} 
-              options={{ fontSize: 12, minimap: { enabled: false }, tabSize }} 
+              theme="vs"
+              options={{ 
+                fontSize: 12, 
+                minimap: { enabled: false }, 
+                tabSize,
+                fontFamily: "var(--font-family-code)",
+                lineNumbersMinChars: 3,
+                padding: { top: 8, bottom: 8 }
+              }} 
             />
           </div>
         </div>
       </div>
 
-      <div className="flex gap-3 items-center mt-1 bg-emerald-500/5 border border-dashed border-emerald-500/20 rounded-lg px-3.5 py-2.5">
+      {/* Auto generator Banner */}
+      <div className="flex gap-3 items-center bg-emerald-50/50 border border-emerald-100 rounded-xl px-4 py-3 shrink-0">
         <button 
           type="button"
           onClick={onAutoGenerate} 
-          className="btn-minimal border-neon-green text-neon-green hover:bg-neon-green/5 hover:border-neon-green bg-bg-secondary px-3 py-1.5 rounded-md text-[0.75rem] font-bold cursor-pointer transition-all"
+          className="btn-minimal border-emerald-200 text-emerald-700 bg-white hover:bg-emerald-50 hover:border-emerald-300 px-3.5 py-2 rounded-lg text-[0.72rem] font-bold cursor-pointer transition-all flex items-center gap-1 shrink-0 shadow-sm"
         >
-          ⚡ Auto-Generate Boilerplates
+          <Zap size={13} className="fill-emerald-700" /> 
+          <span>Auto-Draft Boilerplates</span>
         </button>
-        <span className="text-[0.7rem] text-text-secondary font-medium">
-          Automatically drafts initial & solution templates based on your Assessment Checkpoints.
+        <span className="text-[0.7rem] text-text-secondary font-semibold leading-relaxed">
+          Generates default starter template and sample solution DOM nodes automatically matching your defined Checkpoint ID and Element rules.
         </span>
       </div>
     </div>
