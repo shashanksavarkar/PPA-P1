@@ -6,6 +6,8 @@ import CustomDropdown from "./creator/CustomDropdown";
 import AssessmentCheckpoints from "./creator/AssessmentCheckpoints";
 import CodeTemplatesWorkspace from "./creator/CodeTemplatesWorkspace";
 import { CHALLENGE_PRESETS } from "../constants/challengePresets";
+import { saveChallenge, deleteChallenge, isPocketBaseOnline, getChallenges } from "../utils/pb";
+
 
 const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeIndex, loadQuestion }) => {
   const [form, setForm] = useState({
@@ -52,7 +54,7 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
     setValidationErrors([]);
   };
 
-  const handleSaveChallenge = () => {
+  const handleSaveChallenge = async () => {
     const errors = [];
     if (!form.title || form.title.trim().length < 8) {
       errors.push("Question name too short (< 8 chars)");
@@ -94,28 +96,41 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
       solutionHtml: form.solHtml, solutionCss: form.solCss, solutionJs: form.solJs
     };
 
-    const updated = form.id ? questions.map(x => x.id === form.id ? q : x) : [...questions, q];
-    showToast(form.id ? "Question saved successfully!" : "Question created successfully!", "success");
-    setQuestions(updated);
-    localStorage.setItem("ppa_custom_challenges", JSON.stringify(updated));
-    if (loadQuestion) loadQuestion(form.id ? activeIndex : updated.length - 1);
+    const result = await saveChallenge(q);
+    if (result.success) {
+      const savedQ = result.question;
+      const updated = form.id ? questions.map(x => x.id === form.id ? savedQ : x) : [...questions, savedQ];
+      setQuestions(updated);
+      showToast(form.id ? "Question saved successfully!" : "Question created successfully!", "success");
+      
+      handleEditChallenge(savedQ);
+      
+      if (loadQuestion) {
+        loadQuestion(form.id ? activeIndex : updated.length - 1);
+      }
+    } else {
+      showToast("Failed to save challenge: " + result.error, "error");
+    }
   };
 
-  const handleDeleteChallenge = (id, e) => {
+  const handleDeleteChallenge = async (id, e) => {
     e.stopPropagation();
     if (window.confirm("Delete this question?")) {
-      const updated = questions.filter(q => q.id !== id);
-      setQuestions(updated);
-      localStorage.setItem("ppa_custom_challenges", JSON.stringify(updated));
-      showToast("Question deleted", "info");
-      
-      // If we are currently editing the deleted challenge, clear the form
-      if (form.id === id) {
-        handleLoadPreset("blank");
-      }
+      const result = await deleteChallenge(id);
+      if (result.success) {
+        const updated = questions.filter(q => q.id !== id);
+        setQuestions(updated);
+        showToast("Question deleted", "info");
+        
+        if (form.id === id) {
+          handleLoadPreset("blank");
+        }
 
-      if (loadQuestion && activeIndex !== null) {
-        loadQuestion(activeIndex >= updated.length ? (updated.length > 0 ? updated.length - 1 : null) : activeIndex);
+        if (loadQuestion && activeIndex !== null) {
+          loadQuestion(activeIndex >= updated.length ? (updated.length > 0 ? updated.length - 1 : null) : activeIndex);
+        }
+      } else {
+        showToast("Failed to delete challenge", "error");
       }
     }
   };
@@ -284,13 +299,25 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
                 placeholder="[ { 'id': 'challenge-1', ... } ]"
               />
               <button 
-                onClick={() => {
+                onClick={async () => {
                   try {
                     const parsed = JSON.parse(rawJsonText);
                     if (!Array.isArray(parsed)) throw new Error("JSON must be array.");
-                    setQuestions(parsed);
-                    localStorage.setItem("ppa_custom_challenges", JSON.stringify(parsed));
-                    showToast("Database imported successfully!", "success");
+                    
+                    showToast("Importing challenges to database...", "info");
+                    const finalQuestions = [];
+                    for (const q of parsed) {
+                      const res = await saveChallenge(q);
+                      if (res.success) {
+                        finalQuestions.push(res.question);
+                      } else {
+                        finalQuestions.push(q);
+                      }
+                    }
+                    
+                    setQuestions(finalQuestions);
+                    localStorage.setItem("ppa_custom_challenges", JSON.stringify(finalQuestions));
+                    showToast("Database imported and synced successfully!", "success");
                     setBulkUploadMode(false);
                   } catch(e) { showToast("Invalid JSON: " + e.message, "error"); }
                 }} 
@@ -593,13 +620,25 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
                   />
                   <div className="flex gap-3">
                     <button 
-                      onClick={() => {
+                      onClick={async () => {
                         try {
                           const parsed = JSON.parse(rawJsonText);
                           if (!Array.isArray(parsed)) throw new Error("JSON must be array.");
-                          setQuestions(parsed);
-                          localStorage.setItem("ppa_custom_challenges", JSON.stringify(parsed));
-                          showToast("Database imported successfully!", "success");
+                          
+                          showToast("Importing challenges to database...", "info");
+                          const finalQuestions = [];
+                          for (const q of parsed) {
+                            const res = await saveChallenge(q);
+                            if (res.success) {
+                              finalQuestions.push(res.question);
+                            } else {
+                              finalQuestions.push(q);
+                            }
+                          }
+                          
+                          setQuestions(finalQuestions);
+                          localStorage.setItem("ppa_custom_challenges", JSON.stringify(finalQuestions));
+                          showToast("Database imported and synced successfully!", "success");
                         } catch(e) { showToast("Invalid JSON: " + e.message, "error"); }
                       }} 
                       className="btn-minimal grow justify-center p-3 rounded-xl font-bold bg-bg-tertiary border-border text-text-primary"
@@ -618,10 +657,26 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
                       Export DB to Clipboard
                     </button>
                     <button 
-                      onClick={() => {
-                        if (window.confirm("Restore defaults? Overwrites custom edits.")) {
+                      onClick={async () => {
+                        if (window.confirm("Restore defaults? Overwrites custom edits in PocketBase and local storage.")) {
+                          const online = await isPocketBaseOnline();
+                          if (online) {
+                            try {
+                              showToast("Cleaning PocketBase database...", "info");
+                              const data = await getChallenges();
+                              for (const q of data) {
+                                if (q.dbId) {
+                                  await deleteChallenge(q.dbId);
+                                }
+                              }
+                            } catch (err) {
+                              console.error("Failed to clean PocketBase collections:", err);
+                            }
+                          }
                           localStorage.removeItem("ppa_custom_challenges");
-                          setQuestions(DEFAULT_QUESTIONS);
+                          // Force a re-fetch/re-seed from pb
+                          const freshData = await getChallenges();
+                          setQuestions(freshData);
                           showToast("Restored original database", "info");
                         }
                       }} 

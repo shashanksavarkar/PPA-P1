@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import CreatorWorkspace from "../components/CreatorWorkspace";
 import DEFAULT_QUESTIONS from "../constants/challenges.json";
+import { getChallenges } from "../utils/pb";
 
 const CreatorPage = () => {
   const [questions, setQuestions] = useState(() => {
@@ -12,6 +13,14 @@ const CreatorPage = () => {
       return DEFAULT_QUESTIONS;
     }
   });
+
+  useEffect(() => {
+    const load = async () => {
+      const data = await getChallenges();
+      setQuestions(data);
+    };
+    load();
+  }, []);
 
   const [toasts, setToasts] = useState([]);
   const [tabSize] = useState(() => {

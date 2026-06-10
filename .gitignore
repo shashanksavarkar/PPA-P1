@@ -11,6 +11,17 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+
+# PocketBase Local Database & Binaries
+Backend/pb_data/
+Backend/pocketbase
+Backend/pocketbase.exe
+Backend/CHANGELOG.md
+Backend/LICENSE.md
+
 
 # Editor directories and files
 .vscode/*

@@ -4,6 +4,7 @@ import { compileWebSandbox } from "../utils/compiler";
 import { evaluateRules } from "../utils/ruleEvaluator";
 import { getLocal, setLocal, resolveVal } from "../utils/storage";
 import { runConfetti } from "../utils/confetti";
+import { getChallenges } from "../utils/pb";
 
 import SettingsDrawer from "../components/SettingsDrawer";
 import OutputPanel from "../components/OutputPanel";
@@ -149,6 +150,15 @@ const PlaygroundPage = () => {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      const data = await getChallenges();
+      setChallenge(p => ({ ...p, questions: data }));
+    };
+    load();
+  }, []);
+
 
   useEffect(() => {
     const onMsg = (e) => {
