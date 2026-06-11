@@ -1,14 +1,12 @@
-import { Timer as TimerIcon, RefreshCw, Play, Send } from "lucide-react";
+import { Timer as TimerIcon, RefreshCw, Play } from "lucide-react";
 import { formatTime } from "../utils/storage";
 
 const PlaygroundFooter = ({
   timerRunning,
   setTimerRunning,
   timeSpent,
-  attemptsCount,
   onResetCode,
-  onRunCode,
-  onSubmitPractice
+  onRunCode
 }) => {
   return (
     <footer className="h-[50px] bg-gray-900 border-t border-white/[0.08] flex items-center justify-between px-4 font-[family-name:var(--font-family-ui)] text-white shrink-0 select-none z-100">
@@ -33,22 +31,12 @@ const PlaygroundFooter = ({
         >
           <RefreshCw size={14} />
         </button>
-        <div className="h-8 px-3 rounded-md bg-gray-800 border border-white/[0.08] flex items-center text-gray-300 text-xs font-semibold">
-          Attempts: {attemptsCount}
-        </div>
         <button
           onClick={onRunCode}
           className="h-8 px-4 rounded-md bg-orange-600 border-none text-white text-xs font-bold cursor-pointer flex items-center gap-1.5"
           title="Run (Ctrl+S)"
         >
           <Play size={12} fill="#ffffff" /><span>Run</span>
-        </button>
-        <button
-          onClick={onSubmitPractice}
-          className="h-8 px-4 rounded-md bg-blue-600 border-none text-white text-xs font-bold cursor-pointer flex items-center gap-1.5"
-          title="Submit"
-        >
-          <Send size={12} style={{ transform: "rotate(-45deg)" }} /><span>Submit</span>
         </button>
       </div>
     </footer>

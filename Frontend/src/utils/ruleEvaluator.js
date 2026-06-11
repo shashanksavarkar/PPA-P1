@@ -1,5 +1,49 @@
 import { RULE_TYPES } from "../constants/ruleTypes";
 
+const checkMismatchedTags = (html) => {
+  const voidElements = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
+  const tagRegex = /<(\/)?([a-zA-Z1-6-]+)(?:\s+[^>]*)*>/g;
+  const stack = [];
+  let match;
+  
+  // Strip comments, script blocks, and style blocks to avoid false positives
+  const cleanHtml = html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "");
+
+  while ((match = tagRegex.exec(cleanHtml)) !== null) {
+    const [fullTag, isClosing, tagName] = match;
+    const lowerTagName = tagName.toLowerCase();
+    
+    if (voidElements.has(lowerTagName)) {
+      continue;
+    }
+    
+    if (isClosing) {
+      if (stack.length === 0) {
+        return { success: false, message: `Stray closing tag: ${fullTag}` };
+      }
+      const lastOpenTag = stack.pop();
+      if (lastOpenTag !== lowerTagName) {
+        return { success: false, message: `Mismatched tags: Expected closing tag for <${lastOpenTag}> but got ${fullTag}` };
+      }
+    } else {
+      if (fullTag.endsWith("/>")) {
+        continue;
+      }
+      stack.push(lowerTagName);
+    }
+  }
+  
+  if (stack.length > 0) {
+    return { success: false, message: `Unclosed tag: <${stack[stack.length - 1]}>` };
+  }
+  
+  return { success: true };
+};
+
+
 /**
  * Evaluates candidate code submissions (HTML, CSS, JS) against verification rules.
  * 
@@ -23,9 +67,15 @@ export const evaluateRules = (html, css, js, logs, activeQuestion, iframeDoc) =>
   const liveDoc = iframeDoc || staticDoc;
   const results = [];
 
+  // Run HTML syntax validation check (mismatched/unclosed tags)
+  const syntaxCheck = checkMismatchedTags(html);
+  if (!syntaxCheck.success) {
+    results.push({ stepIndex: 0, success: false, message: syntaxCheck.message });
+  }
+
   // Iterate over each verification rule to test assertions.
   rules.forEach((rule, idx) => {
-    const { type, selector, targetSelector, value, errorMessage } = rule;
+    const { type, selector, targetSelector, value, errorMessage, property } = rule;
     
     // Map the current rule to its corresponding instruction step checkpoint.
     const stepIndex = rule.stepIndex !== undefined ? rule.stepIndex : Math.min(idx, changes.length - 1);
@@ -146,6 +196,42 @@ export const evaluateRules = (html, css, js, logs, activeQuestion, iframeDoc) =>
           const err = logs.find(log => log.type === "error");
           rulePassed = !err;
           if (!rulePassed) ruleMessage = errorMessage || `Code contains runtime errors: ${err.message}`;
+          break;
+        }
+        // Asserts CSS property exists with specific value
+        case RULE_TYPES.CSS_PROP_EXISTS: {
+          const el = liveDoc.querySelector(selector);
+          if (!el) {
+            rulePassed = false;
+            ruleMessage = errorMessage || `Element "${selector}" not found for CSS assertion.`;
+          } else {
+            const iframeWindow = iframeDoc?.defaultView || window;
+            const computedVal = iframeWindow.getComputedStyle(el).getPropertyValue(property);
+            rulePassed = computedVal === value;
+            if (!rulePassed) ruleMessage = errorMessage || `Expected "${selector}" style "${property}" to be "${value}" (got "${computedVal}").`;
+          }
+          break;
+        }
+
+        // Asserts CSS property is NOT a specific value
+        case RULE_TYPES.CSS_PROP_NOT_VALUE: {
+          const el = liveDoc.querySelector(selector);
+          if (!el) {
+            rulePassed = false;
+            ruleMessage = errorMessage || `Element "${selector}" not found for CSS assertion.`;
+          } else {
+            const iframeWindow = iframeDoc?.defaultView || window;
+            const computedVal = iframeWindow.getComputedStyle(el).getPropertyValue(property);
+            rulePassed = computedVal !== value;
+            if (!rulePassed) ruleMessage = errorMessage || `Expected "${selector}" style "${property}" NOT to be "${value}".`;
+          }
+          break;
+        }
+
+        // Asserts raw CSS code contains value
+        case RULE_TYPES.CSS_CODE_INCLUDES: {
+          rulePassed = css.includes(value);
+          if (!rulePassed) ruleMessage = errorMessage || `CSS code must contain: "${value}".`;
           break;
         }
         default:

@@ -11,7 +11,7 @@ import { saveChallenge, deleteChallenge, isPocketBaseOnline, getChallenges } fro
 
 const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeIndex, loadQuestion }) => {
   const [form, setForm] = useState({
-    id: "", title: "", difficulty: "", type: "", duration: 0, topics: [], companies: [], description: "",
+    id: "", title: "", difficulty: "", type: "HTML/CSS/JS", duration: 0, topics: [], companies: [], description: "",
     steps: [{ task: "", type: "TAG_EXISTS", selector: "", targetId: "", value: "", errorMessage: "" }],
     html: "", css: "", js: "", solHtml: "", solCss: "", solJs: "",
   });
@@ -136,7 +136,7 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
   const handleLoadPreset = (name) => {
     if (name === "blank") {
       setForm({
-        id: "", title: "", difficulty: "", type: "", duration: 0, topics: [], companies: [], description: "",
+        id: "", title: "", difficulty: "", type: "HTML/CSS/JS", duration: 0, topics: [], companies: [], description: "",
         steps: [{ task: "", type: "TAG_EXISTS", selector: "", targetId: "", value: "", errorMessage: "" }],
         html: "", css: "", js: "", solHtml: "", solCss: "", solJs: "",
       });
@@ -291,9 +291,7 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
                           onChange={val => updateForm({ type: val })}
                           placeholder="Select type"
                           options={[
-                            { value: "HTML/CSS/JS", label: "HTML/CSS/JS Question" },
-                            { value: "Coding", label: "JS Coding" },
-                            { value: "MCQ", label: "MCQ" }
+                            { value: "HTML/CSS/JS", label: "HTML/CSS/JS Question" }
                           ]}
                         />
                       </div>

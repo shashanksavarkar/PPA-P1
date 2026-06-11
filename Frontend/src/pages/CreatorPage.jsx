@@ -8,9 +8,10 @@ const CreatorPage = () => {
   const [questions, setQuestions] = useState(() => {
     try {
       const saved = localStorage.getItem("ppa_custom_challenges");
-      return saved ? JSON.parse(saved) : DEFAULT_QUESTIONS;
+      const list = saved ? JSON.parse(saved) : DEFAULT_QUESTIONS;
+      return list.filter(q => q.type !== 'MCQ' && q.type !== 'Coding' && q.id !== 'js-counter-app');
     } catch {
-      return DEFAULT_QUESTIONS;
+      return DEFAULT_QUESTIONS.filter(q => q.type !== 'MCQ' && q.type !== 'Coding' && q.id !== 'js-counter-app');
     }
   });
 

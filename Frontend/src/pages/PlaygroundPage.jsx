@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useId } from "react";
+import { emmetHTML, emmetCSS } from "emmet-monaco-es";
 import DEFAULT_QUESTIONS from "../constants/challenges.json";
 import { compileWebSandbox } from "../utils/compiler";
 import { evaluateRules } from "../utils/ruleEvaluator";
 import { getLocal, setLocal, resolveVal } from "../utils/storage";
-import { runConfetti } from "../utils/confetti";
 import { getChallenges } from "../utils/pb";
 
 import SettingsDrawer from "../components/SettingsDrawer";
@@ -39,7 +39,6 @@ const PlaygroundPage = () => {
   const handleRunCodeRef = useRef(null);
   const editorRef        = useRef(null);
   const diffEditorRef    = useRef(null);
-  const canvasRef        = useRef(null);
   const sandboxToken     = useId();
 
   // Custom Hooks for Layout Resizing and Timer
@@ -76,12 +75,12 @@ const PlaygroundPage = () => {
   const { uiFontSize, autoCompile, tabSize, wordWrap, fontSize, minimap } = prefs;
 
   // UI toggles
-  const [ui, setUi] = useState({ settings: false, shortcuts: false, compiling: false, diff: false, celebrated: false, copied: false });
-  const { settings: showSettings, shortcuts: showShortcutsModal, compiling: isCompiling, diff: diffView, celebrated, copied } = ui;
+  const [ui, setUi] = useState({ settings: false, shortcuts: false, compiling: false, diff: false, copied: false });
+  const { settings: showSettings, shortcuts: showShortcutsModal, compiling: isCompiling, diff: diffView, copied } = ui;
 
   // Challenge state
   const [challenge, setChallenge] = useState({
-    questions:      getLocal("ppa_custom_challenges", DEFAULT_QUESTIONS),
+    questions:      getLocal("ppa_custom_challenges", DEFAULT_QUESTIONS).filter(q => q.type !== 'MCQ' && q.type !== 'Coding' && q.id !== 'js-counter-app'),
     activeIndex:    0,
     validationResult: null,
     completedIds:   new Set(getLocal("ppa_completed_ids", [])),
@@ -96,7 +95,6 @@ const PlaygroundPage = () => {
     catch { return false; }
   });
 
-  const [attemptsCount, setAttemptsCount] = useState(0);
 
   const [htmlCode, setHtmlCode]   = useState(() => getLocal("ppa_playground_html", DEFAULT_HTML));
   const [cssCode,  setCssCode]    = useState(() => getLocal("ppa_playground_css",  DEFAULT_CSS));
@@ -208,18 +206,9 @@ const PlaygroundPage = () => {
     return () => clearTimeout(id);
   }, [htmlCode, cssCode, webJsCode, consoleLogs, activeQuestion, srcDoc]);
 
-  // Confetti
   useEffect(() => {
-    if (!celebrated || !canvasRef.current) return;
-    return runConfetti(canvasRef.current, () => {
-      setUi(p => ({ ...p, celebrated: false }));
-    });
-  }, [celebrated]);
-
-  useEffect(() => {
-    if (validationResult?.success && activeQuestion && !completedIds.has(activeQuestion.id) && !celebrated) {
+    if (validationResult?.success && activeQuestion && !completedIds.has(activeQuestion.id)) {
       queueMicrotask(() => {
-        setUi(p => ({ ...p, celebrated: true }));
         showToast("🎉 Challenge Completed!", "success");
         setChallenge(p => {
           const next = new Set(p.completedIds).add(activeQuestion.id);
@@ -228,7 +217,7 @@ const PlaygroundPage = () => {
         });
       });
     }
-  }, [validationResult, completedIds, celebrated, activeQuestion]);
+  }, [validationResult, completedIds, activeQuestion]);
 
   // ── Actions ───────────────────────────────────────────────
   const handleRunCode = useCallback(() => {
@@ -238,8 +227,57 @@ const PlaygroundPage = () => {
       setSrcDoc(compileWebSandbox(htmlCode, cssCode, webJsCode, sandboxToken)); 
       setUi(p => ({ ...p, compiling: false })); 
       showToast("Built successfully!", "success"); 
+
+      // Run tests and log results to console after the iframe has rendered
+      setTimeout(() => {
+        const iframe    = document.querySelector(".preview-iframe");
+        const iframeDoc = iframe?.contentDocument || iframe?.contentWindow?.document;
+        const res = evaluateRules(htmlCode, cssCode, webJsCode, [], activeQuestion, iframeDoc);
+        
+        const testLogs = [];
+        testLogs.push({ type: "info", message: "Running tests...", time: "" });
+        
+        if (activeQuestion?.changesToBeDone?.length > 0) {
+          activeQuestion.changesToBeDone.forEach((change, idx) => {
+            const stepResult = res.stepResults?.[idx];
+            const hasRule = activeQuestion.rules?.some((r, rIdx) => (r.stepIndex ?? Math.min(rIdx, activeQuestion.changesToBeDone.length - 1)) === idx);
+            const isPassed = hasRule ? stepResult?.success : res.success;
+            
+            if (isPassed) {
+              testLogs.push({
+                type: "success",
+                message: `✓ Test ${idx + 1} passed: ${change}`,
+                time: ""
+              });
+            } else {
+              const errMsg = (stepResult?.messages && stepResult.messages[0]) || "Test failed or requirements missing.";
+              testLogs.push({
+                type: "error",
+                message: `✗ Test ${idx + 1} failed: ${change}\n  └─ ${errMsg}`,
+                time: ""
+              });
+            }
+          });
+        }
+        
+        if (res.success) {
+          testLogs.push({
+            type: "success",
+            message: `🎉 All tests passed successfully!`,
+            time: ""
+          });
+        } else {
+          testLogs.push({
+            type: "error",
+            message: `❌ Some tests are failing or missing. Please check the checklist and try again.`,
+            time: ""
+          });
+        }
+        
+        setConsoleLogs(prev => [...prev, ...testLogs]);
+      }, 500); // 500ms after srcDoc is set to allow iframe loading
     }, 450);
-  }, [htmlCode, cssCode, webJsCode, sandboxToken]);
+  }, [htmlCode, cssCode, webJsCode, sandboxToken, activeQuestion]);
 
   useEffect(() => { handleRunCodeRef.current = handleRunCode; }, [handleRunCode]);
 
@@ -251,8 +289,12 @@ const PlaygroundPage = () => {
     const j = getQuestionCode(q, "js",   q.initialJs   || DEFAULT_JS);
     setHtmlCode(h); setCssCode(c); setWebJsCode(j);
     setLocal("ppa_playground_html", h); setLocal("ppa_playground_css", c); setLocal("ppa_playground_webjs", j);
+    
+    // Reset console and preview to fresh state for the new question
+    setConsoleLogs([]);
+    setSrcDoc(compileWebSandbox(h, c, j, sandboxToken));
+
     setChallenge(p => ({ ...p, activeIndex: idx, visibleHints: {}, validationResult: null, showExpected: false, expectedSrcDoc: compileWebSandbox(q.solutionHtml || h, q.solutionCss || c, q.solutionJs || j, sandboxToken) }));
-    setUi(p => ({ ...p, celebrated: false }));
   }, [questions, sandboxToken]);
 
   useEffect(() => {
@@ -293,6 +335,51 @@ const PlaygroundPage = () => {
 
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
+
+    // Register Emmet autocomplete extension
+    try {
+      emmetHTML(monaco, ["html"]);
+      emmetCSS(monaco, ["css"]);
+    } catch (e) {
+      console.error("Failed to load Emmet:", e);
+    }
+
+    // Custom extension: Auto-close HTML tags
+    editor.onDidType((text) => {
+      if (text === ">") {
+        const position = editor.getPosition();
+        if (!position) return;
+        const model = editor.getModel();
+        if (!model) return;
+        const lang = model.getLanguageId ? model.getLanguageId() : (model.getModeId ? model.getModeId() : "html");
+        if (lang !== "html") return;
+
+        const line = model.getLineContent(position.lineNumber);
+        const textBefore = line.substring(0, position.column - 1);
+        const match = textBefore.match(/<([a-zA-Z1-6-]+)(?:\s+[^>\/]*)*>$/);
+        if (!match) return;
+
+        const tagName = match[1];
+        const voidElements = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"];
+        if (voidElements.includes(tagName.toLowerCase())) return;
+
+        const closingTag = `</${tagName}>`;
+        editor.executeEdits("auto-close-tag", [
+          {
+            range: new monaco.Range(
+              position.lineNumber,
+              position.column,
+              position.lineNumber,
+              position.column
+            ),
+            text: closingTag,
+            forceMoveMarkers: true,
+          },
+        ]);
+        editor.setPosition(position);
+      }
+    });
+
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => handleRunCodeRef.current?.());
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyD, () => setUi(p => ({ ...p, diff: !p.diff })));
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyK, () => setUi(p => ({ ...p, shortcuts: true })));
@@ -322,16 +409,6 @@ const PlaygroundPage = () => {
     setUi(p => ({ ...p, copied: true }));
     setTimeout(() => setUi(p => ({ ...p, copied: false })), 2000);
     showToast("Copied!", "success");
-  };
-  const handleSubmitPractice = () => {
-    setAttemptsCount(prev => prev + 1);
-    handleRunCode();
-    setTimeout(() => {
-      const iframeDoc = document.querySelector(".preview-iframe")?.contentDocument;
-      const res = evaluateRules(htmlCode, cssCode, webJsCode, consoleLogs, activeQuestion, iframeDoc);
-      showToast(res?.success ? "🎉 Challenge complete!" : "❌ Some tasks still failing. Keep going!", res?.success ? "success" : "error");
-      if (res?.success && activeQuestion && !completedIds.has(activeQuestion.id)) setUi(p => ({ ...p, celebrated: true }));
-    }, 550);
   };
 
   const displayCol2Width = sidebarCollapsed ? col2Width * (100 / (100 - col1Width)) : col2Width;
@@ -369,6 +446,7 @@ const PlaygroundPage = () => {
               isAuthorMode={isAuthorMode}
               visibleHints={visibleHints}
               toggleHint={idx => setChallenge(p => ({ ...p, visibleHints: { ...p.visibleHints, [idx]: !p.visibleHints[idx] } }))}
+              expectedSrcDoc={expectedSrcDoc}
             />
           </div>
         )}
@@ -453,19 +531,14 @@ const PlaygroundPage = () => {
         timerRunning={timerRunning}
         setTimerRunning={setTimerRunning}
         timeSpent={timeSpent}
-        attemptsCount={attemptsCount}
         onResetCode={handleResetCode}
         onRunCode={handleRunCode}
-        onSubmitPractice={handleSubmitPractice}
       />
 
       {/* Toasts */}
       <div className="toast-container">
         {toasts.map(t => <div key={t.id} className={`toast-item toast-${t.type || "info"}`}><span>{t.message}</span></div>)}
       </div>
-
-      {/* Confetti canvas */}
-      {celebrated && <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-[999999]" />}
 
       {showShortcutsModal && <ShortcutsModal showShortcutsModal={showShortcutsModal} setShowShortcutsModal={s => setUi(p => ({ ...p, shortcuts: s }))} />}
     </div>
