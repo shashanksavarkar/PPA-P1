@@ -9,7 +9,7 @@ const AssessmentCheckpoints = ({
   const addCheckpoint = () => {
     const newSteps = [
       ...steps,
-      { task: "", type: "TAG_EXISTS", elType: "button", elId: "", elClass: "", targetId: "", value: "", errorMessage: "" }
+      { task: "", type: "TAG_EXISTS", selector: "", targetId: "", value: "", errorMessage: "" }
     ];
     onUpdateSteps(newSteps);
   };
@@ -82,7 +82,7 @@ const AssessmentCheckpoints = ({
                   </button>
                 </div>
 
-                {/* Checkpoint criteria dropdowns & inputs */}
+                {/* Checkpoint criteria inputs */}
                 <div className="grid grid-cols-4 gap-3 text-[0.72rem] mt-3 border-t border-black/5 pt-3.5">
                   
                   {/* Criteria Type */}
@@ -105,47 +105,29 @@ const AssessmentCheckpoints = ({
                     </select>
                   </div>
 
-                  {/* Element Type (conditional) */}
+                  {/* CSS Selector (conditional) */}
                   {["TAG_EXISTS", "TEXT_EQUALS", "TEXT_CONTAINS", "CLICK_AND_ASSERT", "INPUT_AND_ASSERT"].includes(step.type) && (
-                    <>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[0.62rem] font-bold text-text-secondary uppercase tracking-wider">ELEMENT TYPE</span>
-                        <select 
-                          value={step.elType} 
-                          onChange={e => updateStepField(idx, "elType", e.target.value)} 
-                          className="creator-select py-1.5 px-2 bg-white"
-                        >
-                          <option value="button">Button</option>
-                          <option value="heading">Heading (h1)</option>
-                          <option value="input">Input</option>
-                          <option value="div">Div / Box</option>
-                          <option value="custom">Custom Selector</option>
-                        </select>
-                      </div>
-                      
-                      {/* ID / Selector */}
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[0.62rem] font-bold text-text-secondary uppercase tracking-wider">ID / SELECTOR</span>
-                        <input 
-                          type="text" 
-                          value={step.elId || ""} 
-                          onChange={e => updateStepField(idx, "elId", e.target.value)} 
-                          placeholder="e.g. counter" 
-                          className="creator-input-small w-full text-[0.76rem] py-1.5 px-2.5" 
-                        />
-                      </div>
-                    </>
+                    <div className="flex flex-col gap-1 col-span-1">
+                      <span className="text-[0.62rem] font-bold text-text-secondary uppercase tracking-wider">CSS SELECTOR</span>
+                      <input 
+                        type="text" 
+                        value={step.selector || ""} 
+                        onChange={e => updateStepField(idx, "selector", e.target.value)} 
+                        placeholder="e.g. #counter or .btn" 
+                        className="creator-input-small w-full text-[0.76rem] py-1.5 px-2.5" 
+                      />
+                    </div>
                   )}
 
-                  {/* Target Element (conditional) */}
+                  {/* Target Element Selector (conditional) */}
                   {["CLICK_AND_ASSERT", "INPUT_AND_ASSERT"].includes(step.type) && (
                     <div className="flex flex-col gap-1">
-                      <span className="text-[0.62rem] font-bold text-text-secondary uppercase tracking-wider">TARGET ELEMENT ID</span>
+                      <span className="text-[0.62rem] font-bold text-text-secondary uppercase tracking-wider">TARGET SELECTOR</span>
                       <input 
                         type="text" 
                         value={step.targetId || ""} 
                         onChange={e => updateStepField(idx, "targetId", e.target.value)} 
-                        placeholder="e.g. result" 
+                        placeholder="e.g. #result" 
                         className="creator-input-small w-full text-[0.76rem] py-1.5 px-2.5" 
                       />
                     </div>

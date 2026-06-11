@@ -1,4 +1,4 @@
-import { FileText, Code2, CheckCircle2, Zap } from "lucide-react";
+import { FileText, Code2, Zap } from "lucide-react";
 import Editor from "@monaco-editor/react";
 
 const CodeTemplatesWorkspace = ({
@@ -16,15 +16,13 @@ const CodeTemplatesWorkspace = ({
   };
 
   const initialCodeValue = creatorCodeTab === "html" ? form.html : creatorCodeTab === "css" ? form.css : form.js;
-  const solutionCodeValue = creatorCodeTab === "html" ? form.solHtml : creatorCodeTab === "css" ? form.solCss : form.solJs;
 
   const handleInitialChange = (val) => {
-    updateForm({ [creatorCodeTab]: val });
-  };
-
-  const handleSolutionChange = (val) => {
-    const key = `sol${creatorCodeTab.charAt(0).toUpperCase() + creatorCodeTab.slice(1)}`;
-    updateForm({ [key]: val });
+    const solKey = `sol${creatorCodeTab.charAt(0).toUpperCase() + creatorCodeTab.slice(1)}`;
+    updateForm({ 
+      [creatorCodeTab]: val,
+      [solKey]: val
+    });
   };
 
   return (
@@ -52,7 +50,7 @@ const CodeTemplatesWorkspace = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-5 h-[340px] shrink-0">
+      <div className="h-[340px] shrink-0">
         {/* Boilerplate Editor */}
         <div className="flex flex-col gap-2 h-full min-w-0">
           <span className="text-[0.65rem] font-extrabold text-text-secondary tracking-wider uppercase flex items-center gap-1.5">
@@ -65,31 +63,6 @@ const CodeTemplatesWorkspace = ({
               language={getLanguage()} 
               value={initialCodeValue} 
               onChange={handleInitialChange} 
-              theme="vs"
-              options={{ 
-                fontSize: 12, 
-                minimap: { enabled: false }, 
-                tabSize,
-                fontFamily: "var(--font-family-code)",
-                lineNumbersMinChars: 3,
-                padding: { top: 8, bottom: 8 }
-              }} 
-            />
-          </div>
-        </div>
-
-        {/* Solution Editor */}
-        <div className="flex flex-col gap-2 h-full min-w-0">
-          <span className="text-[0.65rem] font-extrabold text-accent tracking-wider uppercase flex items-center gap-1.5">
-            <CheckCircle2 size={12} />
-            <span>COMPLETED SOLUTION CODE</span>
-          </span>
-          <div className="grow border border-border rounded-xl overflow-hidden shadow-sm bg-white">
-            <Editor 
-              height="100%" 
-              language={getLanguage()} 
-              value={solutionCodeValue} 
-              onChange={handleSolutionChange} 
               theme="vs"
               options={{ 
                 fontSize: 12, 

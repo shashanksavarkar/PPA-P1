@@ -5,25 +5,11 @@ export const challengeToSteps = (challenge) => {
   
   return tasks.map((taskText, idx) => {
     const rule = rules.find(r => r.stepIndex === idx) || { type: "CONSOLE_NO_ERRORS" };
-    let elType = "custom", elId = "", elClass = "";
-    const selector = rule.selector || "";
-    if (selector) {
-      const idMatch = selector.match(/#([\w-]+)/);
-      if (idMatch) elId = idMatch[1];
-      const classMatch = selector.match(/\.([\w-]+)/);
-      if (classMatch) elClass = classMatch[1];
-
-      if (selector.startsWith("button")) elType = "button";
-      else if (selector.startsWith("h1") || selector.startsWith("h2") || selector.startsWith("h3")) elType = "heading";
-      else if (selector.startsWith("input")) elType = "input";
-      else if (selector.startsWith("ul") || selector.startsWith("ol")) elType = "list";
-      else if (selector.startsWith("div") || selector.startsWith("main") || selector.startsWith("section") || selector.startsWith(".")) elType = "div";
-    }
     return {
       task: taskText,
       type: rule.type || "TAG_EXISTS",
-      elType, elId, elClass,
-      targetId: rule.targetSelector ? rule.targetSelector.replace(/^[#.]/, "") : "",
+      selector: rule.selector || "",
+      targetId: rule.targetSelector || "",
       value: rule.value || "",
       errorMessage: rule.errorMessage || ""
     };
@@ -36,18 +22,12 @@ export const stepsToRulesAndTasks = (steps) => {
   
   steps.forEach((step, idx) => {
     changesToBeDone.push(step.task || `Complete task ${idx + 1}`);
-    let selector = step.elId ? `#${step.elId}` : step.elClass ? `.${step.elClass}` : step.elType || "";
-    if (step.elType && step.elType !== "custom" && step.elType !== "heading") {
-      selector = step.elId ? `${step.elType}#${step.elId}` : step.elClass ? `${step.elType}.${step.elClass}` : step.elType;
-    } else if (step.elType === "heading") {
-      selector = step.elId ? `h1#${step.elId}` : "h1";
-    }
-
-    let targetSelector = step.targetId ? `#${step.targetId}` : "";
+    const selector = step.selector || "";
+    const targetSelector = step.targetId || "";
     let errorMessage = step.errorMessage;
     if (!errorMessage) {
       const msgMap = {
-        TAG_EXISTS: `Missing a ${step.elType || 'element'} with selector '${selector}'`,
+        TAG_EXISTS: `Missing element matching '${selector}'`,
         TEXT_EQUALS: `Expected text of '${selector}' to be exactly '${step.value}'`,
         TEXT_CONTAINS: `Expected text of '${selector}' to contain '${step.value}'`,
         CLICK_AND_ASSERT: `Clicking '${selector}' did not update '${targetSelector}' to '${step.value}'`,
@@ -146,61 +126,29 @@ export const parseChallengeText = (text) => {
 };
 
 export const generateStarterCode = (steps, title) => {
-  const elementsMap = {};
-  const jsLines = [], solJsLines = [];
-  
-  steps.forEach(step => {
-    if (step.elId || step.elClass || (step.elType && step.elType !== "custom")) {
-      const key = step.elId || step.elClass || step.elType;
-      if (!elementsMap[key]) {
-        elementsMap[key] = { id: step.elId, className: step.elClass, type: step.elType, value: step.type === "CLICK_AND_ASSERT" ? (step.value || "Click Me") : step.value };
-      }
-    }
-    
-    if (step.targetId && !elementsMap[step.targetId]) {
-      let type = "div", val = "";
-      const lower = step.targetId.toLowerCase();
-      if (lower.includes("count") || lower.includes("number")) { type = "heading"; val = "0"; }
-      else if (lower.includes("input") || lower.includes("field")) type = "input";
-      else if (lower.includes("title") || lower.includes("heading")) { type = "heading"; val = "Initial Text"; }
-      else if (lower.includes("list") || lower.includes("items")) type = "list";
-      elementsMap[step.targetId] = { id: step.targetId, className: "", type, value: val };
-    }
-    
-    if (step.elId && step.targetId) {
-      if (step.type === "CLICK_AND_ASSERT") {
-        jsLines.push(`// Listen for clicks on '#${step.elId}'\ndocument.getElementById('${step.elId}').addEventListener('click', () => {\n  // TODO: Update '#${step.targetId}'\n});\n`);
-        solJsLines.push(`document.getElementById('${step.elId}').addEventListener('click', () => {\n  const target = document.getElementById('${step.targetId}');\n  if (target.tagName === 'INPUT') target.value = "${step.value}";\n  else target.textContent = "${step.value}";\n});\n`);
-      } else if (step.type === "INPUT_AND_ASSERT") {
-        jsLines.push(`// Listen for input on '#${step.elId}'\ndocument.getElementById('${step.elId}').addEventListener('input', (event) => {\n  // TODO\n});\n`);
-        solJsLines.push(`document.getElementById('${step.elId}').addEventListener('input', (event) => {\n  document.getElementById('${step.targetId}').textContent = event.target.value;\n});\n`);
-      }
-    }
-  });
-  
-  const templateMap = {
-    button: (id, cls, val) => `<button${id}${cls}>${val || 'Click'}</button>`,
-    heading: (id, cls, val) => `<h1${id}${cls}>${val !== undefined && val !== "" ? val : 'Heading'}</h1>`,
-    input: (id, cls, val) => `<input type="text"${id}${cls} placeholder="${val || 'Type...'}">`,
-    list: (id, cls) => `<ul${id}${cls}>\n  </ul>`,
-    div: (id, cls) => `<div${id}${cls}></div>`
-  };
+  const startHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>${title || 'HTML 5 Boilerplate'}</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <script src="index.js"></script>
+  </body>
+</html>`;
 
-  const htmlElements = Object.values(elementsMap).map(el => {
-    const id = el.id ? ` id="${el.id}"` : '';
-    const cls = el.className ? ` class="${el.className}"` : '';
-    return '  ' + (templateMap[el.type] || ((id, cls, val) => `<div${id}${cls}>${val || ''}</div>`))(id, cls, el.value);
-  });
-  
-  const startHtml = `<!DOCTYPE html>\n<html>\n<head>\n  <title>${title || 'Challenge'}</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n  <main>\n    <h1>${title || 'Challenge'}</h1>\n  ${htmlElements.join('\n  ')}\n  </main>\n  <script src="index.js"></script>\n</body>\n</html>`;
-  const startCss = `body { font-family: sans-serif; margin: 30px; }`;
+  const startCss = `/* Write your styles here */`;
+  const startJs = `// Write your JavaScript code here\nconsole.log("App ready!");`;
 
   return {
     html: startHtml,
     css: startCss,
-    js: jsLines.length ? jsLines.join('\n') : `console.log("App ready!");`,
+    js: startJs,
     solHtml: startHtml,
     solCss: startCss,
-    solJs: solJsLines.length ? solJsLines.join('\n') : `console.log("App solved!");`
+    solJs: startJs
   };
 };
