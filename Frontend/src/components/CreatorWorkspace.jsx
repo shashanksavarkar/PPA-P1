@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Terminal, Search, Trash2, BookOpen, AlertCircle } from "lucide-react";
+import { FileText, Search, Trash2, BookOpen, AlertCircle } from "lucide-react";
 import DEFAULT_QUESTIONS from "../constants/challenges.json";
 import { challengeToSteps, stepsToRulesAndTasks, parseChallengeText, generateStarterCode } from "../utils/challengeHelpers";
 import CustomDropdown from "./creator/CustomDropdown";
@@ -12,19 +12,18 @@ import { saveChallenge, deleteChallenge, isPocketBaseOnline, getChallenges } fro
 const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeIndex, loadQuestion }) => {
   const [form, setForm] = useState({
     id: "", title: "", difficulty: "", type: "", duration: 0, topics: [], companies: [], description: "",
-    steps: [{ task: "", type: "TAG_EXISTS", elType: "button", elId: "", elClass: "", targetId: "", value: "", errorMessage: "" }],
+    steps: [{ task: "", type: "TAG_EXISTS", selector: "", targetId: "", value: "", errorMessage: "" }],
     html: "", css: "", js: "", solHtml: "", solCss: "", solJs: "",
   });
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [bulkUploadMode, setBulkUploadMode] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   const [topicInput, setTopicInput] = useState("");
   const [companyInput, setCompanyInput] = useState("");
 
   const [advancedSteps, setAdvancedSteps] = useState({});
   const [importText, setImportText] = useState("");
-  const [rawJsonText, setRawJsonText] = useState("");
+  const [bulkJsonText, setBulkJsonText] = useState("");
   const [creatorCodeTab, setCreatorCodeTab] = useState("html");
   const [creatorTab, setCreatorTab] = useState("form");
 
@@ -46,7 +45,7 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
       topics: q.topics || [],
       companies: q.companies || [],
       description: q.description || "",
-      steps: challengeToSteps(q).length ? challengeToSteps(q) : [{ task: "", type: "TAG_EXISTS", elType: "button", elId: "", elClass: "", targetId: "", value: "", errorMessage: "" }],
+      steps: challengeToSteps(q).length ? challengeToSteps(q) : [{ task: "", type: "TAG_EXISTS", selector: "", targetId: "", value: "", errorMessage: "" }],
       html: q.initialHtml || "", css: q.initialCss || "", js: q.initialJs || "",
       solHtml: q.solutionHtml || "", solCss: q.solutionCss || "", solJs: q.solutionJs ||  ""
     });
@@ -139,7 +138,7 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
     if (name === "blank") {
       setForm({
         id: "", title: "", difficulty: "", type: "", duration: 0, topics: [], companies: [], description: "",
-        steps: [{ task: "", type: "TAG_EXISTS", elType: "button", elId: "", elClass: "", targetId: "", value: "", errorMessage: "" }],
+        steps: [{ task: "", type: "TAG_EXISTS", selector: "", targetId: "", value: "", errorMessage: "" }],
         html: "", css: "", js: "", solHtml: "", solCss: "", solJs: "",
       });
       setCreatorTab("form");
@@ -150,6 +149,124 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
     if (CHALLENGE_PRESETS[name]) { 
       setForm({ id: "", ...CHALLENGE_PRESETS[name] }); 
       showToast(`${name} preset loaded!`, "info"); 
+    }
+  };
+  
+  const handleBulkImport = async () => {
+    if (!bulkJsonText.trim()) {
+      showToast("JSON input cannot be empty!", "error");
+      return;
+    }
+
+    let parsedData;
+    try {
+      parsedData = JSON.parse(bulkJsonText);
+    } catch (err) {
+      showToast("Invalid JSON format! Please check syntax.", "error");
+      return;
+    }
+
+    if (!Array.isArray(parsedData)) {
+      showToast("JSON must be an array of challenge objects!", "error");
+      return;
+    }
+
+    if (parsedData.length === 0) {
+      showToast("The array is empty. No challenges to import.", "info");
+      return;
+    }
+
+    let successCount = 0;
+    const importedQuestions = [];
+    const errors = [];
+
+    for (let i = 0; i < parsedData.length; i++) {
+      const item = parsedData[i];
+      const challengeTitle = item.title || `Bulk Challenge ${i + 1}`;
+      
+      try {
+        const difficulty = item.difficulty || "Easy";
+        const type = item.type || "HTML/CSS/JS";
+        const duration = parseInt(item.duration, 10) || 15;
+        const topics = Array.isArray(item.topics) ? item.topics : ["HTML"];
+        const companies = Array.isArray(item.companies) ? item.companies : ["General"];
+        const description = item.description || "";
+        const initialHtml = item.initialHtml || item.html || "";
+        const initialCss = item.initialCss || item.css || "";
+        const initialJs = item.initialJs || item.js || "";
+        const solutionHtml = item.solutionHtml || item.solHtml || "";
+        const solutionCss = item.solutionCss || item.solCss || "";
+        const solutionJs = item.solutionJs || item.solJs || "";
+
+        let changesToBeDone = item.changesToBeDone || [];
+        let rules = item.rules || [];
+
+        if ((!changesToBeDone.length || !rules.length) && Array.isArray(item.steps) && item.steps.length > 0) {
+          const parsedSteps = stepsToRulesAndTasks(item.steps);
+          changesToBeDone = parsedSteps.changesToBeDone;
+          rules = parsedSteps.rules;
+        }
+
+        if (!changesToBeDone.length) {
+          changesToBeDone = ["Complete the tasks."];
+        }
+
+        const newId = item.id || `custom-${challengeTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString().slice(-4)}`;
+
+        const q = {
+          id: newId,
+          env: item.env || "web",
+          title: challengeTitle,
+          difficulty,
+          type,
+          duration,
+          topics,
+          companies,
+          description,
+          changesToBeDone,
+          hints: Array.isArray(item.hints) ? item.hints : changesToBeDone.map(t => `Hint for: ${t}`),
+          rules,
+          initialHtml,
+          initialCss,
+          initialJs,
+          solutionHtml,
+          solutionCss,
+          solutionJs
+        };
+
+        const result = await saveChallenge(q);
+        if (result.success) {
+          successCount++;
+          importedQuestions.push(result.question);
+        } else {
+          errors.push(`"${challengeTitle}": ${result.error}`);
+        }
+      } catch (err) {
+        errors.push(`"${challengeTitle}": ${err.message}`);
+      }
+    }
+
+    if (successCount > 0) {
+      setQuestions(prev => {
+        let updated = [...prev];
+        importedQuestions.forEach(newQ => {
+          const existsIdx = updated.findIndex(x => x.id === newQ.id);
+          if (existsIdx !== -1) {
+            updated[existsIdx] = newQ;
+          } else {
+            updated.push(newQ);
+          }
+        });
+        return updated;
+      });
+
+      setBulkJsonText("");
+      showToast(`Imported ${successCount} challenges successfully!`, "success");
+    }
+
+    if (errors.length > 0) {
+      console.error("Errors during bulk import:", errors);
+      showToast(`Failed to import ${errors.length} challenges. Check console for details.`, "error");
     }
   };
 
@@ -238,13 +355,13 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
       {/* Right Content Area */}
       <div className="grow flex flex-col h-full min-w-0 overflow-hidden">
         
-        {/* Modern Pill Tab Switcher and Global Mode Toggle */}
+        {/* Modern Pill Tab Switcher */}
         <div className="flex justify-between items-center mb-5 shrink-0">
           <div className="flex bg-bg-tertiary p-1 rounded-xl gap-1 border border-border shrink-0">
             {[
               { id: "form", label: "Wizard Form" },
               { id: "text", label: "Markdown Outline Parser" },
-              { id: "json", label: "Raw JSON Database" }
+              { id: "bulk", label: "Bulk Mode (JSON)" }
             ].map(t => (
               <button 
                 key={t.id} 
@@ -259,77 +376,12 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
               </button>
             ))}
           </div>
-
-          {/* Bulk Upload Toggle Switch */}
-          <div className="flex items-center gap-2.5 bg-white border border-border px-3.5 py-1.5 rounded-xl shadow-sm">
-            <span className="text-[0.78rem] font-bold text-text-primary">Bulk Database Mode</span>
-            <div 
-              onClick={() => setBulkUploadMode(!bulkUploadMode)}
-              className={`w-[38px] h-[20px] rounded-[10px] relative cursor-pointer transition-colors duration-200 ${
-                bulkUploadMode ? "bg-accent" : "bg-bg-quaternary"
-              }`}
-            >
-              <div 
-                className={`w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.15)] ${
-                  bulkUploadMode ? "left-[21px]" : "left-[3px]"
-                }`}
-              />
-            </div>
-            <span className="text-[0.72rem] text-text-secondary font-extrabold min-w-[20px]">{bulkUploadMode ? "ON" : "OFF"}</span>
-          </div>
         </div>
 
         {/* Tab Content Panels */}
         <div className="grow overflow-y-auto pr-1 min-h-0 scrollbar">
-          
-          {bulkUploadMode ? (
-            <div className="creator-glass-card p-6 flex flex-col gap-4">
-              <div className="flex items-center gap-2 border-b border-border pb-3">
-                <Terminal size={16} className="text-accent" />
-                <span className="text-[0.85rem] font-bold text-text-primary">BULK JSON DATABASE UPLOAD</span>
-              </div>
-              <span className="text-[0.75rem] text-text-secondary font-semibold leading-relaxed">
-                Paste the full JSON array of challenges/questions to completely overwrite the current questions list database.
-              </span>
-              <textarea 
-                value={rawJsonText} 
-                onChange={e => setRawJsonText(e.target.value)} 
-                rows={14} 
-                className="creator-input-text font-[family-name:var(--font-family-code)] text-[0.78rem] p-3.5 rounded-xl border border-border bg-bg-primary" 
-                placeholder="[ { 'id': 'challenge-1', ... } ]"
-              />
-              <button 
-                onClick={async () => {
-                  try {
-                    const parsed = JSON.parse(rawJsonText);
-                    if (!Array.isArray(parsed)) throw new Error("JSON must be array.");
-                    
-                    showToast("Importing challenges to database...", "info");
-                    const finalQuestions = [];
-                    for (const q of parsed) {
-                      const res = await saveChallenge(q);
-                      if (res.success) {
-                        finalQuestions.push(res.question);
-                      } else {
-                        finalQuestions.push(q);
-                      }
-                    }
-                    
-                    setQuestions(finalQuestions);
-                    localStorage.setItem("ppa_custom_challenges", JSON.stringify(finalQuestions));
-                    showToast("Database imported and synced successfully!", "success");
-                    setBulkUploadMode(false);
-                  } catch(e) { showToast("Invalid JSON: " + e.message, "error"); }
-                }} 
-                className="btn-minimal creator-btn-gradient w-full justify-center p-3 rounded-xl"
-              >
-                Import database array
-              </button>
-            </div>
-          ) : (
-            <>
-              {creatorTab === "form" && (
-                <div className="flex flex-col gap-6">
+          {creatorTab === "form" && (
+            <div className="flex flex-col gap-6">
                   
                   {/* Card 1: Question Form Inputs */}
                   <div className="creator-glass-card p-6 flex flex-col gap-5">
@@ -359,9 +411,9 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
                           onChange={val => updateForm({ type: val })}
                           placeholder="Select type"
                           options={[
-                            { value: "HTML/CSS/JS", label: "HTML/CSS/JS Sandbox" },
-                            { value: "Coding", label: "JavaScript Coding" },
-                            { value: "MCQ", label: "Multiple Choice (MCQ)" }
+                            { value: "HTML/CSS/JS", label: "HTML/CSS/JS Question" },
+                            { value: "Coding", label: "JS Coding" },
+                            { value: "MCQ", label: "MCQ" }
                           ]}
                         />
                       </div>
@@ -483,34 +535,6 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
                     </div>
                     
                     <div className="flex flex-col border border-border rounded-xl overflow-hidden bg-white">
-                      {/* Editor Formatting Toolbar */}
-                      <div className="flex flex-wrap gap-1 p-2 border-b border-border bg-bg-tertiary items-center">
-                        {[
-                          { icon: "Normal", label: "Normal", cmd: () => {} },
-                          { icon: "B", label: "Bold", cmd: () => updateForm({ description: form.description + "**bold**" }) },
-                          { icon: "I", label: "Italic", cmd: () => updateForm({ description: form.description + "*italic*" }) },
-                          { icon: "U", label: "Underline", cmd: () => updateForm({ description: form.description + "<u>underline</u>" }) },
-                          { icon: "S", label: "Strikethrough", cmd: () => updateForm({ description: form.description + "~~strike~~" }) },
-                          { icon: "Code", label: "Inline Code", cmd: () => updateForm({ description: form.description + "`code`" }) },
-                          { icon: "H1", label: "Heading 1", cmd: () => updateForm({ description: form.description + "\n# Heading" }) },
-                          { icon: "UL", label: "Unordered List", cmd: () => updateForm({ description: form.description + "\n- Item" }) },
-                          { icon: "OL", label: "Ordered List", cmd: () => updateForm({ description: form.description + "\n1. Item" }) },
-                          { icon: "Quote", label: "Blockquote", cmd: () => updateForm({ description: form.description + "\n> Quote" }) },
-                          { icon: "Link", label: "Insert Hyperlink", cmd: () => updateForm({ description: form.description + "[Label](url)" }) },
-                          { icon: "Img", label: "Insert Image", cmd: () => updateForm({ description: form.description + "![Alt text](url)" }) }
-                        ].map(t => (
-                          <button 
-                            key={t.label} 
-                            type="button"
-                            onClick={t.cmd}
-                            className="px-2.5 py-1 text-[0.68rem] font-bold border border-border rounded-lg bg-white cursor-pointer text-text-primary transition-colors duration-150 hover:bg-bg-tertiary"
-                            title={t.label}
-                          >
-                            {t.icon}
-                          </button>
-                        ))}
-                      </div>
-                      
                       {/* Text Area */}
                       <textarea 
                         value={form.description} 
@@ -603,92 +627,31 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
                 </div>
               )}
 
-              {creatorTab === "json" && (
-                <div className="creator-glass-card p-6 flex flex-col gap-4">
+              {creatorTab === "bulk" && (
+                <div className="creator-glass-card p-6 flex flex-col gap-4 animate-[slideIn_0.2s_ease]">
                   <div className="flex items-center gap-2 border-b border-border pb-3">
-                    <Terminal size={16} className="text-accent" />
-                    <span className="text-[0.85rem] font-bold text-text-primary">Raw JSON Database Manager</span>
+                    <FileText size={16} className="text-accent" />
+                    <span className="text-[0.85rem] font-bold text-text-primary">Bulk Mode (JSON Outline)</span>
                   </div>
                   <span className="text-[0.75rem] text-text-secondary font-semibold leading-relaxed">
-                    Directly import or export the entire questions database payload. Use this tab to back up custom challenges.
+                    Paste a JSON array of challenge configurations to import them in bulk. Supported formats include standard properties, schema properties, or a <code>steps</code> array representation.
                   </span>
                   <textarea 
-                    value={rawJsonText} 
-                    onChange={e => setRawJsonText(e.target.value)} 
+                    value={bulkJsonText} 
+                    onChange={e => setBulkJsonText(e.target.value)} 
                     rows={12} 
-                    className="creator-input-text font-[family-name:var(--font-family-code)] text-[0.78rem] p-3.5 rounded-xl border border-border bg-bg-primary" 
+                    className="creator-input-text font-[family-name:var(--font-family-code)] text-[0.78rem] p-3.5 rounded-xl border border-border bg-bg-primary w-full h-[320px] resize-y" 
+                    placeholder={`[\n  {\n    "title": "Bulk Challenge 1",\n    "difficulty": "Easy",\n    "type": "HTML/CSS/JS",\n    "duration": 15,\n    "topics": ["HTML", "CSS"],\n    "companies": ["Google"],\n    "description": "Create a division with content hello",\n    "steps": [\n      {\n        "task": "Create h1 with class name 'heading'",\n        "type": "TAG_EXISTS",\n        "selector": "h1.heading"\n      }\n    ]\n  }\n]`} 
                   />
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={async () => {
-                        try {
-                          const parsed = JSON.parse(rawJsonText);
-                          if (!Array.isArray(parsed)) throw new Error("JSON must be array.");
-                          
-                          showToast("Importing challenges to database...", "info");
-                          const finalQuestions = [];
-                          for (const q of parsed) {
-                            const res = await saveChallenge(q);
-                            if (res.success) {
-                              finalQuestions.push(res.question);
-                            } else {
-                              finalQuestions.push(q);
-                            }
-                          }
-                          
-                          setQuestions(finalQuestions);
-                          localStorage.setItem("ppa_custom_challenges", JSON.stringify(finalQuestions));
-                          showToast("Database imported and synced successfully!", "success");
-                        } catch(e) { showToast("Invalid JSON: " + e.message, "error"); }
-                      }} 
-                      className="btn-minimal grow justify-center p-3 rounded-xl font-bold bg-bg-tertiary border-border text-text-primary"
-                    >
-                      Import DB
-                    </button>
-                    <button 
-                      onClick={() => { 
-                        const val = JSON.stringify(questions, null, 2); 
-                        setRawJsonText(val); 
-                        navigator.clipboard.writeText(val); 
-                        showToast("Copied to clipboard!", "success"); 
-                      }} 
-                      className="btn-minimal grow justify-center p-3 rounded-xl font-bold bg-bg-tertiary border-border text-text-primary"
-                    >
-                      Export DB to Clipboard
-                    </button>
-                    <button 
-                      onClick={async () => {
-                        if (window.confirm("Restore defaults? Overwrites custom edits in PocketBase and local storage.")) {
-                          const online = await isPocketBaseOnline();
-                          if (online) {
-                            try {
-                              showToast("Cleaning PocketBase database...", "info");
-                              const data = await getChallenges();
-                              for (const q of data) {
-                                if (q.dbId) {
-                                  await deleteChallenge(q.dbId);
-                                }
-                              }
-                            } catch (err) {
-                              console.error("Failed to clean PocketBase collections:", err);
-                            }
-                          }
-                          localStorage.removeItem("ppa_custom_challenges");
-                          // Force a re-fetch/re-seed from pb
-                          const freshData = await getChallenges();
-                          setQuestions(freshData);
-                          showToast("Restored original database", "info");
-                        }
-                      }} 
-                      className="btn-minimal border-neon-red text-neon-red hover:bg-neon-red/5 p-3 rounded-xl font-bold"
-                    >
-                      Reset original DB
-                    </button>
-                  </div>
+                  <button 
+                    onClick={handleBulkImport} 
+                    className="btn-minimal creator-btn-gradient w-full justify-center p-3.5 rounded-xl text-[0.82rem] font-extrabold cursor-pointer"
+                  >
+                    Import Bulk Challenges
+                  </button>
                 </div>
               )}
-            </>
-          )}
+
         </div>
       </div>
     </div>

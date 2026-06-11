@@ -36,9 +36,21 @@ export const CHALLENGE_PRESETS = {
     difficulty: "Easy",
     description: "",
     steps: [{ task: "", type: "TAG_EXISTS", elType: "button", elId: "", elClass: "", targetId: "", value: "", errorMessage: "" }],
-    html: "<!DOCTYPE html>\n<html>\n<body>\n</body>\n</html>",
-    css: "body { font-family: sans-serif; }",
-    js: "",
+    html: `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>HTML 5 Boilerplate</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <script src="index.js"></script>
+  </body>
+</html>`,
+    css: "/* Write your styles here */",
+    js: `// Write your JavaScript code here\nconsole.log("App ready!");`,
     solHtml: "",
     solCss: "",
     solJs: ""
