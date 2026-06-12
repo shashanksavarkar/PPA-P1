@@ -11,7 +11,7 @@ import { saveChallenge, deleteChallenge, isPocketBaseOnline, getChallenges } fro
 
 const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeIndex, loadQuestion }) => {
   const [form, setForm] = useState({
-    id: "", title: "", difficulty: "", type: "HTML/CSS/JS", duration: 0, topics: [], companies: [], description: "",
+    id: "", title: "", difficulty: "", type: "", duration: 0, topics: [], companies: [], description: "",
     steps: [{ task: "", type: "TAG_EXISTS", selector: "", targetId: "", value: "", errorMessage: "" }],
     html: "", css: "", js: "", solHtml: "", solCss: "", solJs: "",
   });
@@ -23,6 +23,7 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
 
   const [advancedSteps, setAdvancedSteps] = useState({});
   const [importText, setImportText] = useState("");
+  const [bulkJsonText, setBulkJsonText] = useState("");
   const [creatorCodeTab, setCreatorCodeTab] = useState("html");
   const [creatorTab, setCreatorTab] = useState("form");
 
@@ -136,7 +137,7 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
   const handleLoadPreset = (name) => {
     if (name === "blank") {
       setForm({
-        id: "", title: "", difficulty: "", type: "HTML/CSS/JS", duration: 0, topics: [], companies: [], description: "",
+        id: "", title: "", difficulty: "", type: "", duration: 0, topics: [], companies: [], description: "",
         steps: [{ task: "", type: "TAG_EXISTS", selector: "", targetId: "", value: "", errorMessage: "" }],
         html: "", css: "", js: "", solHtml: "", solCss: "", solJs: "",
       });
@@ -148,6 +149,124 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
     if (CHALLENGE_PRESETS[name]) { 
       setForm({ id: "", ...CHALLENGE_PRESETS[name] }); 
       showToast(`${name} preset loaded!`, "info"); 
+    }
+  };
+  
+  const handleBulkImport = async () => {
+    if (!bulkJsonText.trim()) {
+      showToast("JSON input cannot be empty!", "error");
+      return;
+    }
+
+    let parsedData;
+    try {
+      parsedData = JSON.parse(bulkJsonText);
+    } catch (err) {
+      showToast("Invalid JSON format! Please check syntax.", "error");
+      return;
+    }
+
+    if (!Array.isArray(parsedData)) {
+      showToast("JSON must be an array of challenge objects!", "error");
+      return;
+    }
+
+    if (parsedData.length === 0) {
+      showToast("The array is empty. No challenges to import.", "info");
+      return;
+    }
+
+    let successCount = 0;
+    const importedQuestions = [];
+    const errors = [];
+
+    for (let i = 0; i < parsedData.length; i++) {
+      const item = parsedData[i];
+      const challengeTitle = item.title || `Bulk Challenge ${i + 1}`;
+      
+      try {
+        const difficulty = item.difficulty || "Easy";
+        const type = item.type || "HTML/CSS/JS";
+        const duration = parseInt(item.duration, 10) || 15;
+        const topics = Array.isArray(item.topics) ? item.topics : ["HTML"];
+        const companies = Array.isArray(item.companies) ? item.companies : ["General"];
+        const description = item.description || "";
+        const initialHtml = item.initialHtml || item.html || "";
+        const initialCss = item.initialCss || item.css || "";
+        const initialJs = item.initialJs || item.js || "";
+        const solutionHtml = item.solutionHtml || item.solHtml || "";
+        const solutionCss = item.solutionCss || item.solCss || "";
+        const solutionJs = item.solutionJs || item.solJs || "";
+
+        let changesToBeDone = item.changesToBeDone || [];
+        let rules = item.rules || [];
+
+        if ((!changesToBeDone.length || !rules.length) && Array.isArray(item.steps) && item.steps.length > 0) {
+          const parsedSteps = stepsToRulesAndTasks(item.steps);
+          changesToBeDone = parsedSteps.changesToBeDone;
+          rules = parsedSteps.rules;
+        }
+
+        if (!changesToBeDone.length) {
+          changesToBeDone = ["Complete the tasks."];
+        }
+
+        const newId = item.id || `custom-${challengeTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString().slice(-4)}`;
+
+        const q = {
+          id: newId,
+          env: item.env || "web",
+          title: challengeTitle,
+          difficulty,
+          type,
+          duration,
+          topics,
+          companies,
+          description,
+          changesToBeDone,
+          hints: Array.isArray(item.hints) ? item.hints : changesToBeDone.map(t => `Hint for: ${t}`),
+          rules,
+          initialHtml,
+          initialCss,
+          initialJs,
+          solutionHtml,
+          solutionCss,
+          solutionJs
+        };
+
+        const result = await saveChallenge(q);
+        if (result.success) {
+          successCount++;
+          importedQuestions.push(result.question);
+        } else {
+          errors.push(`"${challengeTitle}": ${result.error}`);
+        }
+      } catch (err) {
+        errors.push(`"${challengeTitle}": ${err.message}`);
+      }
+    }
+
+    if (successCount > 0) {
+      setQuestions(prev => {
+        let updated = [...prev];
+        importedQuestions.forEach(newQ => {
+          const existsIdx = updated.findIndex(x => x.id === newQ.id);
+          if (existsIdx !== -1) {
+            updated[existsIdx] = newQ;
+          } else {
+            updated.push(newQ);
+          }
+        });
+        return updated;
+      });
+
+      setBulkJsonText("");
+      showToast(`Imported ${successCount} challenges successfully!`, "success");
+    }
+
+    if (errors.length > 0) {
+      console.error("Errors during bulk import:", errors);
+      showToast(`Failed to import ${errors.length} challenges. Check console for details.`, "error");
     }
   };
 
@@ -241,7 +360,8 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
           <div className="flex bg-bg-tertiary p-1 rounded-xl gap-1 border border-border shrink-0">
             {[
               { id: "form", label: "Wizard Form" },
-              { id: "text", label: "Markdown Outline Parser" }
+              { id: "text", label: "Markdown Outline Parser" },
+              { id: "bulk", label: "Bulk Mode (JSON)" }
             ].map(t => (
               <button 
                 key={t.id} 
@@ -291,7 +411,9 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
                           onChange={val => updateForm({ type: val })}
                           placeholder="Select type"
                           options={[
-                            { value: "HTML/CSS/JS", label: "HTML/CSS/JS Question" }
+                            { value: "HTML/CSS/JS", label: "HTML/CSS/JS Question" },
+                            { value: "Coding", label: "JS Coding" },
+                            { value: "MCQ", label: "MCQ" }
                           ]}
                         />
                       </div>
@@ -501,6 +623,31 @@ const CreatorWorkspace = ({ questions, setQuestions, showToast, tabSize, activeI
                     className="btn-minimal creator-btn-gradient w-full justify-center p-3.5 rounded-xl"
                   >
                     Parse &amp; Load into Wizard
+                  </button>
+                </div>
+              )}
+
+              {creatorTab === "bulk" && (
+                <div className="creator-glass-card p-6 flex flex-col gap-4 animate-[slideIn_0.2s_ease]">
+                  <div className="flex items-center gap-2 border-b border-border pb-3">
+                    <FileText size={16} className="text-accent" />
+                    <span className="text-[0.85rem] font-bold text-text-primary">Bulk Mode (JSON Outline)</span>
+                  </div>
+                  <span className="text-[0.75rem] text-text-secondary font-semibold leading-relaxed">
+                    Paste a JSON array of challenge configurations to import them in bulk. Supported formats include standard properties, schema properties, or a <code>steps</code> array representation.
+                  </span>
+                  <textarea 
+                    value={bulkJsonText} 
+                    onChange={e => setBulkJsonText(e.target.value)} 
+                    rows={12} 
+                    className="creator-input-text font-[family-name:var(--font-family-code)] text-[0.78rem] p-3.5 rounded-xl border border-border bg-bg-primary w-full h-[320px] resize-y" 
+                    placeholder={`[\n  {\n    "title": "Bulk Challenge 1",\n    "difficulty": "Easy",\n    "type": "HTML/CSS/JS",\n    "duration": 15,\n    "topics": ["HTML", "CSS"],\n    "companies": ["Google"],\n    "description": "Create a division with content hello",\n    "steps": [\n      {\n        "task": "Create h1 with class name 'heading'",\n        "type": "TAG_EXISTS",\n        "selector": "h1.heading"\n      }\n    ]\n  }\n]`} 
+                  />
+                  <button 
+                    onClick={handleBulkImport} 
+                    className="btn-minimal creator-btn-gradient w-full justify-center p-3.5 rounded-xl text-[0.82rem] font-extrabold cursor-pointer"
+                  >
+                    Import Bulk Challenges
                   </button>
                 </div>
               )}
