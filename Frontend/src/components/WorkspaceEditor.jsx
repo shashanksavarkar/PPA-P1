@@ -94,7 +94,7 @@ const WorkspaceEditor = ({
           {diffView ? (
             <DiffEditor height="100%" language={getMonacoLanguage()} original={getOriginalCode()} modified={getActiveCode()} onMount={handleDiffMount} theme="light" options={{ fontSize, fontFamily: "var(--font-family-code)", minimap: { enabled: false }, wordWrap, readOnly: false, automaticLayout: true, renderSideBySide: true }} />
           ) : (
-            <Editor height="100%" language={getMonacoLanguage()} value={getActiveCode()} onChange={handleEditorChange} onMount={handleEditorDidMount} theme="light" options={{ fontSize, fontFamily: "var(--font-family-code)", minimap: { enabled: minimap }, wordWrap, lineNumbers: "on", readOnly: false, automaticLayout: true, padding: { top: 12, bottom: 12 }, tabSize, scrollBeyondLastLine: false, bracketPairColorization: { enabled: true } }} />
+            <Editor height="100%" language={getMonacoLanguage()} value={getActiveCode()} onChange={handleEditorChange} onMount={handleEditorDidMount} theme="light" options={{ fontSize, fontFamily: "var(--font-family-code)", minimap: { enabled: minimap }, wordWrap, lineNumbers: "on", readOnly: false, automaticLayout: true, padding: { top: 12, bottom: 12 }, tabSize, scrollBeyondLastLine: false, bracketPairColorization: { enabled: true }, suggestOnTriggerCharacters: true, quickSuggestions: { other: true, comments: true, strings: true }, acceptSuggestionOnEnter: "on", tabCompletion: "on", wordBasedSuggestions: "allDocuments" }} />
           )}
         </div>
       </div>

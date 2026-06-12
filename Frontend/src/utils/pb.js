@@ -91,7 +91,7 @@ export const getChallenges = async () => {
         solutionHtml: r.solutionHtml || '',
         solutionCss: r.solutionCss || '',
         solutionJs: r.solutionJs || '',
-      }));
+      })).filter(q => q.type !== 'MCQ' && q.type !== 'Coding' && q.id !== 'js-counter-app');
     } catch (e) {
       console.warn("PocketBase fetch failed, falling back to local storage:", e);
     }
@@ -100,9 +100,10 @@ export const getChallenges = async () => {
   // Offline Fallback
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : DEFAULT_QUESTIONS;
+    const list = saved ? JSON.parse(saved) : DEFAULT_QUESTIONS;
+    return list.filter(q => q.type !== 'MCQ' && q.type !== 'Coding' && q.id !== 'js-counter-app');
   } catch {
-    return DEFAULT_QUESTIONS;
+    return DEFAULT_QUESTIONS.filter(q => q.type !== 'MCQ' && q.type !== 'Coding' && q.id !== 'js-counter-app');
   }
 };
 

@@ -160,10 +160,17 @@ const OutputPanel = ({
         {/* Console Logs Container */}
         {!consoleCollapsed && (
           <div className="grow overflow-y-auto px-3.5 py-2.5 font-[family-name:var(--font-family-code)] text-xs bg-bg-secondary">
+            {/* Persistent header comment */}
+            <div className="text-text-secondary font-mono mb-3 whitespace-pre leading-relaxed opacity-70">
+              {`/**\n* Your test output will go here\n*/`}
+            </div>
+
             {filteredLogs.length === 0 ? (
-              <div className="text-text-secondary text-[0.7rem] italic text-center mt-2.5">
-                {searchTerm ? "No logs matching filter" : "Console empty"}
-              </div>
+              searchTerm && (
+                <div className="text-text-secondary text-[0.7rem] italic text-center mt-2.5">
+                  No logs matching filter
+                </div>
+              )
             ) : (
               filteredLogs.map((log, index) => {
                 const colors = { warn: "#b45309", error: "var(--color-neon-red)", success: "var(--color-neon-green)" };
